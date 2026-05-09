@@ -4,6 +4,7 @@ import {
   StyleSheet, Alert, ActivityIndicator, ScrollView,
 } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import * as ImagePicker from 'expo-image-picker';
 import api from '../services/api';
 import { useAuth } from '../context/AuthContext';
 
@@ -13,6 +14,7 @@ export default function ProfileScreen() {
   const [editing, setEditing] = useState(false);
   const [form, setForm] = useState({});
   const [saving, setSaving] = useState(false);
+  const [uploadingPhoto, setUploadingPhoto] = useState(false);
   const [partnerQuery, setPartnerQuery] = useState('');
   const [foundUser, setFoundUser] = useState(null);
   const [searching, setSearching] = useState(false);
@@ -46,6 +48,42 @@ export default function ProfileScreen() {
       Alert.alert('Error', messages);
     } finally {
       setSaving(false);
+    }
+  };
+
+  const handlePickPhoto = async () => {
+    try {
+      const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
+      if (!permission.granted) {
+        Alert.alert('Permission required', 'Please allow access to your photo library in Settings.');
+        return;
+      }
+      const result = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ['images'],
+        allowsEditing: true,
+        aspect: [1, 1],
+        quality: 0.7,
+      });
+      if (result.canceled) return;
+
+      setUploadingPhoto(true);
+      const userId = await AsyncStorage.getItem('user_id');
+      const uri = result.assets[0].uri;
+      const filename = uri.split('/').pop();
+      const match = /\.(\w+)$/.exec(filename);
+      const type = match ? `image/${match[1]}` : 'image/jpeg';
+
+      const formData = new FormData();
+      formData.append('profile_picture', { uri, name: filename, type });
+
+      const { data } = await api.post(`/users/${userId}/profile_picture`, formData, {
+        headers: { 'Content-Type': 'multipart/form-data' },
+      });
+      setUser(prev => ({ ...prev, image_url: data.image_url }));
+    } catch (err) {
+      Alert.alert('Error', err?.message || 'Could not upload photo. Please try again.');
+    } finally {
+      setUploadingPhoto(false);
     }
   };
 
@@ -135,13 +173,20 @@ export default function ProfileScreen() {
 
       {/* Avatar */}
       <View style={styles.avatarSection}>
-        {user.image_url ? (
-          <Image source={{ uri: user.image_url }} style={styles.avatar} />
-        ) : (
-          <View style={[styles.avatar, styles.avatarFallback]}>
-            <Text style={styles.avatarInitial}>{user.name?.[0]?.toUpperCase() || '?'}</Text>
+        <TouchableOpacity onPress={handlePickPhoto} disabled={uploadingPhoto}>
+          {user.image_url ? (
+            <Image source={{ uri: user.image_url }} style={styles.avatar} />
+          ) : (
+            <View style={[styles.avatar, styles.avatarFallback]}>
+              <Text style={styles.avatarInitial}>{user.name?.[0]?.toUpperCase() || '?'}</Text>
+            </View>
+          )}
+          <View style={styles.changePhotoOverlay}>
+            {uploadingPhoto
+              ? <ActivityIndicator size="small" color="#fff" />
+              : <Text style={styles.changePhotoText}>📷</Text>}
           </View>
-        )}
+        </TouchableOpacity>
       </View>
 
       {/* Profile fields */}
@@ -298,6 +343,20 @@ const styles = StyleSheet.create({
   avatar: { width: 100, height: 100, borderRadius: 50, borderWidth: 3, borderColor: '#e94560' },
   avatarFallback: { backgroundColor: '#0f3460', justifyContent: 'center', alignItems: 'center' },
   avatarInitial: { color: '#fff', fontSize: 36, fontWeight: 'bold' },
+  changePhotoOverlay: {
+    position: 'absolute',
+    bottom: 0,
+    right: 0,
+    backgroundColor: '#e94560',
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 2,
+    borderColor: '#1a1a2e',
+  },
+  changePhotoText: { fontSize: 14 },
   section: {
     backgroundColor: '#16213e',
     borderRadius: 16,

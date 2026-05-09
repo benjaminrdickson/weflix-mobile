@@ -17,7 +17,13 @@
     },
     "plugins": [
       "expo-localization",
-      "expo-web-browser"
+      "expo-web-browser",
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "WeFlix needs access to your photo library to set your profile picture."
+        }
+      ]
     ]
   }
 }
