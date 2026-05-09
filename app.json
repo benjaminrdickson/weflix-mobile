@@ -1,0 +1,24 @@
+{
+  "expo": {
+    "name": "WeFlix",
+    "slug": "weflix",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "userInterfaceStyle": "dark",
+    "ios": {
+      "supportsTablet": false,
+      "bundleIdentifier": "com.weflix.app"
+    },
+    "android": {
+      "package": "com.weflix.app",
+      "adaptiveIcon": {
+        "backgroundColor": "#1a1a2e"
+      }
+    },
+    "extra": {
+      "eas": {
+        "projectId": "replace-with-your-eas-project-id"
+      }
+    }
+  }
+}
