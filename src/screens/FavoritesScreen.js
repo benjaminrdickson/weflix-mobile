@@ -110,12 +110,15 @@ function FavoriteCard({ item, onRemove }) {
   );
 }
 
+const FILTERS = ['all', 'movie', 'tv'];
+
 export default function FavoritesScreen() {
   const [favorites, setFavorites] = useState([]);
   const [currentUser, setCurrentUser] = useState(null);
   const [partner, setPartner] = useState(null);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+  const [filter, setFilter] = useState('all');
 
   const region = Localization.getLocales()[0]?.regionCode || 'US';
 
@@ -158,18 +161,35 @@ export default function FavoritesScreen() {
     );
   }
 
+  const filtered = filter === 'all' ? favorites : favorites.filter((f) => f.content_type === filter);
+
   return (
     <FlatList
       style={styles.container}
-      data={favorites}
+      data={filtered}
       keyExtractor={(item) => String(item.favorite_id)}
       ListHeaderComponent={
         <View>
           <Text style={styles.screenTitle}>Your Watchlist</Text>
           <PartnerHeader user={currentUser} partner={partner} />
-          {favorites.length === 0 && (
+          <View style={styles.toggle}>
+            {FILTERS.map((f) => (
+              <TouchableOpacity
+                key={f}
+                style={[styles.toggleBtn, filter === f && styles.toggleBtnActive]}
+                onPress={() => setFilter(f)}
+              >
+                <Text style={[styles.toggleText, filter === f && styles.toggleTextActive]}>
+                  {f === 'all' ? 'All' : f === 'movie' ? 'Movies' : 'Shows'}
+                </Text>
+              </TouchableOpacity>
+            ))}
+          </View>
+          {filtered.length === 0 && (
             <Text style={styles.emptyText}>
-              No shared favorites yet — start swiping together!
+              {favorites.length === 0
+                ? 'No shared favorites yet — start swiping together!'
+                : `No ${filter === 'movie' ? 'movie' : 'show'} favorites yet`}
             </Text>
           )}
         </View>
@@ -209,6 +229,23 @@ const styles = StyleSheet.create({
   avatarInitial: { color: '#fff', fontSize: 24, fontWeight: 'bold' },
   avatarName: { color: '#ccc', fontSize: 13 },
   avatarPlaceholder: { width: 64, height: 64 },
+  toggle: {
+    flexDirection: 'row',
+    marginHorizontal: 16,
+    marginBottom: 16,
+    backgroundColor: '#16213e',
+    borderRadius: 12,
+    padding: 4,
+  },
+  toggleBtn: {
+    flex: 1,
+    paddingVertical: 10,
+    borderRadius: 10,
+    alignItems: 'center',
+  },
+  toggleBtnActive: { backgroundColor: '#e94560' },
+  toggleText: { color: '#888', fontWeight: '600', fontSize: 14 },
+  toggleTextActive: { color: '#fff' },
   emptyText: { color: '#888', textAlign: 'center', marginTop: 40, fontSize: 16, paddingHorizontal: 32 },
   card: {
     backgroundColor: '#16213e',
