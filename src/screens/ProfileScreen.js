@@ -5,7 +5,7 @@ import {
 } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import api from '../services/api';
-import { useAuth } from '../../App';
+import { useAuth } from '../context/AuthContext';
 
 export default function ProfileScreen() {
   const { logout } = useAuth();

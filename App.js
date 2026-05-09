@@ -1,17 +1,13 @@
-import React, { useState, useEffect, createContext, useContext } from 'react';
+import { registerRootComponent } from 'expo';
+import React, { useState, useEffect } from 'react';
 import { View, ActivityIndicator } from 'react-native';
 import { NavigationContainer } from '@react-navigation/native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import AuthNavigator from './src/navigation/AuthNavigator';
 import MainNavigator from './src/navigation/MainNavigator';
+import { AuthContext } from './src/context/AuthContext';
 
-export const AuthContext = createContext();
-
-export function useAuth() {
-  return useContext(AuthContext);
-}
-
-export default function App() {
+function App() {
   const [isLoading, setIsLoading] = useState(true);
   const [userToken, setUserToken] = useState(null);
 
@@ -52,3 +48,5 @@ export default function App() {
     </AuthContext.Provider>
   );
 }
+
+registerRootComponent(App);

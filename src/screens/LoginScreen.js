@@ -4,7 +4,7 @@ import {
   StyleSheet, Alert, ActivityIndicator, KeyboardAvoidingView, Platform,
 } from 'react-native';
 import api from '../services/api';
-import { useAuth } from '../../App';
+import { useAuth } from '../context/AuthContext';
 
 export default function LoginScreen({ navigation }) {
   const { login } = useAuth();
