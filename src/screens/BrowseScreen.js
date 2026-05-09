@@ -1,9 +1,10 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import {
   View, Text, Image, TouchableOpacity, StyleSheet,
-  ScrollView, ActivityIndicator, Alert, Linking,
+  ScrollView, ActivityIndicator, Alert,
 } from 'react-native';
 import api from '../services/api';
+import { openTrailer } from '../components/TrailerModal';
 
 const CONTENT_TYPES = ['movie', 'tv', 'both'];
 const TMDB_IMAGE_BASE = 'https://image.tmdb.org/t/p/w500';
@@ -55,14 +56,10 @@ export default function BrowseScreen() {
     if (!acting) fetchContent();
   };
 
-  const openTrailer = () => {
-    const key = content?.videos?.results?.[0]?.key;
-    if (key) {
-      Linking.openURL(`https://www.youtube.com/watch?v=${key}`);
-    } else {
-      Alert.alert('No trailer available');
-    }
-  };
+  const trailerKey = (
+    content?.videos?.results?.find(v => v.site === 'YouTube' && v.type === 'Trailer') ||
+    content?.videos?.results?.find(v => v.site === 'YouTube')
+  )?.key || null;
 
   const resolvedType = content?.content_type || contentType;
 
@@ -113,7 +110,7 @@ export default function BrowseScreen() {
             <Text style={styles.date}>{content.release_date?.slice(0, 4)}</Text>
             <Text style={styles.overview} numberOfLines={5}>{content.overview}</Text>
 
-            <TouchableOpacity style={styles.trailerBtn} onPress={openTrailer}>
+            <TouchableOpacity style={styles.trailerBtn} onPress={() => openTrailer(trailerKey)}>
               <Text style={styles.trailerText}>▶ Watch Trailer</Text>
             </TouchableOpacity>
           </View>

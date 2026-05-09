@@ -1,8 +1,9 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useEffect, useCallback, useState } from 'react';
 import {
   View, Text, Image, TouchableOpacity, FlatList,
-  StyleSheet, ActivityIndicator, Alert, Linking, RefreshControl,
+  StyleSheet, ActivityIndicator, Alert, RefreshControl,
 } from 'react-native';
+import { openTrailer } from '../components/TrailerModal';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as Localization from 'expo-localization';
 import api from '../services/api';
@@ -56,13 +57,6 @@ function ProviderRow({ label, providers }) {
 }
 
 function FavoriteCard({ item, onRemove }) {
-  const openTrailer = () => {
-    if (item.videos) {
-      Linking.openURL(`https://www.youtube.com/watch?v=${item.videos}`);
-    } else {
-      Alert.alert('No trailer available');
-    }
-  };
 
   const hasProviders =
     item.watch_providers?.flatrate?.length ||
@@ -85,7 +79,7 @@ function FavoriteCard({ item, onRemove }) {
           {item.genre ? <Text style={styles.cardGenre}>{item.genre}</Text> : null}
           <Text style={styles.cardYear}>{item.release_date?.slice(0, 4)}</Text>
           <Text style={styles.cardOverview} numberOfLines={3}>{item.overview}</Text>
-          <TouchableOpacity onPress={openTrailer}>
+          <TouchableOpacity onPress={() => openTrailer(item.videos)}>
             <Text style={styles.trailerLink}>▶ Trailer</Text>
           </TouchableOpacity>
         </View>

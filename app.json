@@ -16,7 +16,8 @@
       }
     },
     "plugins": [
-      "expo-localization"
+      "expo-localization",
+      "expo-web-browser"
     ]
   }
 }
