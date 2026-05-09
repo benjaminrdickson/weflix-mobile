@@ -19,6 +19,9 @@
       "eas": {
         "projectId": "replace-with-your-eas-project-id"
       }
-    }
+    },
+    "plugins": [
+      "expo-localization"
+    ]
   }
 }
