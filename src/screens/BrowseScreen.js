@@ -1,266 +1,369 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import {
-  View, Text, Image, TouchableOpacity, StyleSheet,
-  ScrollView, ActivityIndicator, Alert,
+  View, Text, Image, TextInput, TouchableOpacity,
+  FlatList, StyleSheet, ActivityIndicator, Alert,
+  ScrollView,
 } from 'react-native';
 import api from '../services/api';
-import { openTrailer } from '../components/TrailerModal';
+import DetailModal from '../components/DetailModal';
 
-const CONTENT_TYPES = ['movie', 'tv', 'both'];
-const TMDB_IMAGE_BASE = 'https://image.tmdb.org/t/p/w500';
+const TMDB_IMAGE_BASE = 'https://image.tmdb.org/t/p/w342';
+const CONTENT_TYPES = [
+  { key: 'movie', label: 'Movies' },
+  { key: 'tv',    label: 'Shows'  },
+  { key: 'both',  label: 'Both'   },
+];
 
 export default function BrowseScreen() {
-  const [content, setContent] = useState(null);
   const [contentType, setContentType] = useState('movie');
-  const [loading, setLoading] = useState(true);
-  const [acting, setActing] = useState(false);
+  const [genres, setGenres]           = useState([]);
+  const [genreMap, setGenreMap]       = useState({});
+  const [selectedGenre, setSelectedGenre] = useState(null);
+  const [query, setQuery]             = useState('');
+  const [submittedQuery, setSubmittedQuery] = useState('');
 
-  const fetchContent = useCallback(async () => {
-    setLoading(true);
-    setContent(null);
-    try {
-      const { data } = await api.get('/movies/random', { params: { content_type: contentType } });
-      setContent(data);
-    } catch (err) {
-      if (err.response?.status === 404) {
-        Alert.alert('All caught up!', 'You have seen everything available right now.');
-      } else {
-        Alert.alert('Error', 'Could not load content. Please try again.');
-      }
-    } finally {
-      setLoading(false);
-    }
+  const [items, setItems]             = useState([]);
+  const [page, setPage]               = useState(1);
+  const [loadingFirst, setLoadingFirst] = useState(true);
+  const [loadingMore, setLoadingMore] = useState(false);
+  const [exhausted, setExhausted]     = useState(false);
+
+  const [selectedItem, setSelectedItem] = useState(null);
+
+  const activeRequest = useRef(null);
+
+  // Fetch genre list whenever content type changes
+  useEffect(() => {
+    api.get('/genres', { params: { content_type: contentType } })
+      .then(({ data }) => {
+        setGenres(data);
+        const map = {};
+        data.forEach(g => { map[g.id] = g.name; });
+        setGenreMap(map);
+        setSelectedGenre(null);
+      })
+      .catch(() => {});
   }, [contentType]);
 
+  // Reset and reload when filters change
   useEffect(() => {
-    fetchContent();
-  }, [fetchContent]);
+    loadPage(1, true);
+  }, [contentType, selectedGenre, submittedQuery]);
 
-  const handleLike = async () => {
-    if (!content || acting) return;
-    setActing(true);
-    try {
-      await api.post('/likes', {
-        api_movie_id: content.id,
-        content_type: content.content_type || contentType,
-      });
-    } catch {
-      // Like failed silently — still move to next card
-    } finally {
-      setActing(false);
-      fetchContent();
+  const loadPage = useCallback(async (targetPage, reset = false) => {
+    const requestId = Date.now();
+    activeRequest.current = requestId;
+
+    if (reset) {
+      setLoadingFirst(true);
+      setExhausted(false);
+    } else {
+      setLoadingMore(true);
     }
+
+    try {
+      const { data } = await api.get('/browse', {
+        params: {
+          content_type: contentType,
+          page: targetPage,
+          genre_id: selectedGenre || undefined,
+          query: submittedQuery || undefined,
+        },
+      });
+
+      if (activeRequest.current !== requestId) return;
+
+      const incoming = data.results || [];
+      if (reset) {
+        setItems(incoming);
+        setPage(1);
+      } else {
+        setItems(prev => [...prev, ...incoming]);
+      }
+      if (incoming.length === 0) setExhausted(true);
+    } catch {
+      if (activeRequest.current !== requestId) return;
+      Alert.alert('Error', 'Could not load content. Please try again.');
+    } finally {
+      if (activeRequest.current === requestId) {
+        setLoadingFirst(false);
+        setLoadingMore(false);
+      }
+    }
+  }, [contentType, selectedGenre, submittedQuery]);
+
+  const handleEndReached = () => {
+    if (loadingMore || loadingFirst || exhausted) return;
+    const next = page + 1;
+    setPage(next);
+    loadPage(next);
   };
 
-  const handlePass = () => {
-    if (!acting) fetchContent();
+  const removeItem = (id, type) => {
+    setItems(prev => prev.filter(i => !(i.id === id && i.content_type === type)));
   };
 
-  const trailerKey = (
-    content?.videos?.results?.find(v => v.site === 'YouTube' && v.type === 'Trailer') ||
-    content?.videos?.results?.find(v => v.site === 'YouTube')
-  )?.key || null;
+  const handleLike = async (item) => {
+    try {
+      await api.post('/likes', { api_movie_id: item.id, content_type: item.content_type });
+    } catch {
+      // fail silently
+    }
+    removeItem(item.id, item.content_type);
+  };
 
-  const resolvedType = content?.content_type || contentType;
+  const handlePass = async (item) => {
+    try {
+      await api.post('/passes', { api_movie_id: item.id, content_type: item.content_type });
+    } catch {
+      // fail silently
+    }
+    removeItem(item.id, item.content_type);
+  };
+
+  const renderCard = ({ item }) => {
+    const year = item.release_date?.slice(0, 4) || '';
+    const genreLabels = (item.genre_ids || []).slice(0, 3).map(id => genreMap[id]).filter(Boolean);
+
+    return (
+      <TouchableOpacity style={styles.card} activeOpacity={0.92} onPress={() => setSelectedItem(item)}>
+        {item.poster_path ? (
+          <Image
+            source={{ uri: `${TMDB_IMAGE_BASE}${item.poster_path}` }}
+            style={styles.poster}
+            resizeMode="cover"
+          />
+        ) : (
+          <View style={[styles.poster, styles.posterFallback]}>
+            <Text style={styles.posterFallbackText}>No Image</Text>
+          </View>
+        )}
+
+        <View style={styles.cardBody}>
+          <View style={styles.cardTitleRow}>
+            <Text style={styles.cardTitle} numberOfLines={1}>{item.title}</Text>
+            <Text style={styles.cardYear}>{year}</Text>
+          </View>
+
+          <View style={styles.badgeRow}>
+            <View style={styles.typeBadge}>
+              <Text style={styles.typeBadgeText}>
+                {item.content_type === 'tv' ? '📺' : '🎬'}
+              </Text>
+            </View>
+            {genreLabels.map(g => (
+              <View key={g} style={styles.genreBadge}>
+                <Text style={styles.genreBadgeText}>{g}</Text>
+              </View>
+            ))}
+          </View>
+
+          <Text style={styles.overview} numberOfLines={2}>{item.overview}</Text>
+
+          <View style={styles.cardActions}>
+            <TouchableOpacity style={styles.passBtn} onPress={() => handlePass(item)}>
+              <Text style={styles.passBtnText}>✕  Pass</Text>
+            </TouchableOpacity>
+            <TouchableOpacity style={styles.likeBtn} onPress={() => handleLike(item)}>
+              <Text style={styles.likeBtnText}>❤  Like</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </TouchableOpacity>
+    );
+  };
 
   return (
     <View style={styles.container}>
+      {/* Search bar */}
+      <View style={styles.searchRow}>
+        <TextInput
+          style={styles.searchInput}
+          placeholder="Search movies & shows..."
+          placeholderTextColor="#666"
+          value={query}
+          onChangeText={setQuery}
+          onSubmitEditing={() => setSubmittedQuery(query.trim())}
+          returnKeyType="search"
+          autoCapitalize="none"
+        />
+        {submittedQuery ? (
+          <TouchableOpacity style={styles.clearBtn} onPress={() => { setQuery(''); setSubmittedQuery(''); }}>
+            <Text style={styles.clearBtnText}>✕</Text>
+          </TouchableOpacity>
+        ) : null}
+      </View>
+
       {/* Content type toggle */}
       <View style={styles.toggle}>
-        {CONTENT_TYPES.map((type) => (
+        {CONTENT_TYPES.map(({ key, label }) => (
           <TouchableOpacity
-            key={type}
-            style={[styles.toggleBtn, contentType === type && styles.toggleBtnActive]}
-            onPress={() => setContentType(type)}
+            key={key}
+            style={[styles.toggleBtn, contentType === key && styles.toggleBtnActive]}
+            onPress={() => setContentType(key)}
           >
-            <Text style={[styles.toggleText, contentType === type && styles.toggleTextActive]}>
-              {type === 'movie' ? 'Movies' : type === 'tv' ? 'Shows' : 'Both'}
+            <Text style={[styles.toggleText, contentType === key && styles.toggleTextActive]}>
+              {label}
             </Text>
           </TouchableOpacity>
         ))}
       </View>
 
-      {loading ? (
+      {/* Genre chips */}
+      {genres.length > 0 && (
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          style={styles.genreScroll}
+          contentContainerStyle={styles.genreScrollContent}
+        >
+          <TouchableOpacity
+            style={[styles.genreChip, !selectedGenre && styles.genreChipActive]}
+            onPress={() => setSelectedGenre(null)}
+          >
+            <Text style={[styles.genreChipText, !selectedGenre && styles.genreChipTextActive]}>All</Text>
+          </TouchableOpacity>
+          {genres.map(g => (
+            <TouchableOpacity
+              key={g.id}
+              style={[styles.genreChip, selectedGenre === g.id && styles.genreChipActive]}
+              onPress={() => setSelectedGenre(selectedGenre === g.id ? null : g.id)}
+            >
+              <Text style={[styles.genreChipText, selectedGenre === g.id && styles.genreChipTextActive]}>
+                {g.name}
+              </Text>
+            </TouchableOpacity>
+          ))}
+        </ScrollView>
+      )}
+
+      {/* List */}
+      {loadingFirst ? (
         <View style={styles.centered}>
           <ActivityIndicator size="large" color="#e94560" />
         </View>
-      ) : content ? (
-        <ScrollView contentContainerStyle={styles.card} showsVerticalScrollIndicator={false}>
-          {content.poster_path ? (
-            <Image
-              source={{ uri: `${TMDB_IMAGE_BASE}${content.poster_path}` }}
-              style={styles.poster}
-              resizeMode="cover"
-            />
-          ) : (
-            <View style={[styles.poster, styles.posterPlaceholder]}>
-              <Text style={styles.posterPlaceholderText}>No Image</Text>
+      ) : (
+        <FlatList
+          data={items}
+          keyExtractor={item => `${item.content_type}-${item.id}`}
+          renderItem={renderCard}
+          contentContainerStyle={styles.list}
+          onEndReached={handleEndReached}
+          onEndReachedThreshold={0.4}
+          ListEmptyComponent={
+            <View style={styles.centered}>
+              <Text style={styles.emptyText}>No results found</Text>
             </View>
-          )}
+          }
+          ListFooterComponent={
+            loadingMore
+              ? <ActivityIndicator color="#e94560" style={{ marginVertical: 24 }} />
+              : exhausted && items.length > 0
+                ? <Text style={styles.exhaustedText}>You've seen everything!</Text>
+                : null
+          }
+        />
+      )}
 
-          <View style={styles.meta}>
-            <View style={styles.badgeRow}>
-              <View style={styles.badge}>
-                <Text style={styles.badgeText}>
-                  {resolvedType === 'tv' ? '📺 TV Show' : '🎬 Movie'}
-                </Text>
-              </View>
-            </View>
-            <Text style={styles.title} numberOfLines={2}>{content.title}</Text>
-            <Text style={styles.date}>{content.release_date?.slice(0, 4)}</Text>
-            <Text style={styles.overview} numberOfLines={5}>{content.overview}</Text>
-
-            <TouchableOpacity style={styles.trailerBtn} onPress={() => openTrailer(trailerKey)}>
-              <Text style={styles.trailerText}>▶ Watch Trailer</Text>
-            </TouchableOpacity>
-          </View>
-        </ScrollView>
-      ) : null}
-
-      {/* Action buttons */}
-      <View style={styles.actions}>
-        <TouchableOpacity style={[styles.actionBtn, styles.passBtn]} onPress={handlePass} disabled={loading || acting}>
-          <Text style={styles.actionBtnText}>✕</Text>
-        </TouchableOpacity>
-        <TouchableOpacity style={[styles.actionBtn, styles.likeBtn]} onPress={handleLike} disabled={loading || acting}>
-          {acting ? (
-            <ActivityIndicator color="#fff" />
-          ) : (
-            <Text style={styles.actionBtnText}>❤</Text>
-          )}
-        </TouchableOpacity>
-      </View>
+      <DetailModal
+        item={selectedItem}
+        genreMap={genreMap}
+        onLike={handleLike}
+        onPass={handlePass}
+        onClose={() => setSelectedItem(null)}
+      />
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#1a1a2e',
+  container: { flex: 1, backgroundColor: '#1a1a2e' },
+  searchRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginHorizontal: 16,
+    marginTop: 56,
+    marginBottom: 8,
+    gap: 8,
   },
+  searchInput: {
+    flex: 1,
+    backgroundColor: '#16213e',
+    color: '#fff',
+    borderRadius: 10,
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+    fontSize: 15,
+    borderWidth: 1,
+    borderColor: '#0f3460',
+  },
+  clearBtn: {
+    backgroundColor: '#16213e',
+    borderRadius: 10,
+    padding: 10,
+    borderWidth: 1,
+    borderColor: '#0f3460',
+  },
+  clearBtnText: { color: '#aaa', fontSize: 14 },
   toggle: {
     flexDirection: 'row',
-    margin: 16,
-    marginTop: 56,
+    marginHorizontal: 16,
+    marginBottom: 8,
     backgroundColor: '#16213e',
     borderRadius: 12,
     padding: 4,
   },
-  toggleBtn: {
-    flex: 1,
-    paddingVertical: 10,
-    borderRadius: 10,
-    alignItems: 'center',
-  },
-  toggleBtnActive: {
-    backgroundColor: '#e94560',
-  },
-  toggleText: {
-    color: '#888',
-    fontWeight: '600',
-    fontSize: 14,
-  },
-  toggleTextActive: {
-    color: '#fff',
-  },
-  centered: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  card: {
-    paddingBottom: 120,
-  },
-  poster: {
-    width: '100%',
-    height: 420,
-  },
-  posterPlaceholder: {
+  toggleBtn: { flex: 1, paddingVertical: 8, borderRadius: 10, alignItems: 'center' },
+  toggleBtnActive: { backgroundColor: '#e94560' },
+  toggleText: { color: '#888', fontWeight: '600', fontSize: 14 },
+  toggleTextActive: { color: '#fff' },
+  genreScroll: { maxHeight: 40, marginBottom: 8 },
+  genreScrollContent: { paddingHorizontal: 16, gap: 8, alignItems: 'center' },
+  genreChip: {
+    paddingHorizontal: 14,
+    paddingVertical: 6,
     backgroundColor: '#16213e',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  posterPlaceholderText: {
-    color: '#888',
-    fontSize: 18,
-  },
-  meta: {
-    padding: 20,
-  },
-  badgeRow: {
-    flexDirection: 'row',
-    marginBottom: 8,
-  },
-  badge: {
-    backgroundColor: '#0f3460',
-    borderRadius: 6,
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-  },
-  badgeText: {
-    color: '#aaa',
-    fontSize: 12,
-  },
-  title: {
-    color: '#fff',
-    fontSize: 24,
-    fontWeight: 'bold',
-    marginBottom: 4,
-  },
-  date: {
-    color: '#888',
-    fontSize: 14,
-    marginBottom: 12,
-  },
-  overview: {
-    color: '#ccc',
-    fontSize: 15,
-    lineHeight: 22,
-    marginBottom: 16,
-  },
-  trailerBtn: {
+    borderRadius: 20,
     borderWidth: 1,
-    borderColor: '#e94560',
-    borderRadius: 8,
-    paddingVertical: 10,
-    paddingHorizontal: 20,
-    alignSelf: 'flex-start',
+    borderColor: '#0f3460',
   },
-  trailerText: {
-    color: '#e94560',
-    fontSize: 15,
-    fontWeight: '600',
+  genreChipActive: { backgroundColor: '#e94560', borderColor: '#e94560' },
+  genreChipText: { color: '#888', fontSize: 13, fontWeight: '500' },
+  genreChipTextActive: { color: '#fff' },
+  list: { paddingHorizontal: 16, paddingBottom: 32 },
+  card: {
+    backgroundColor: '#16213e',
+    borderRadius: 16,
+    marginBottom: 16,
+    overflow: 'hidden',
+    borderWidth: 1,
+    borderColor: '#0f3460',
   },
-  actions: {
-    position: 'absolute',
-    bottom: 32,
-    left: 0,
-    right: 0,
-    flexDirection: 'row',
-    justifyContent: 'center',
-    gap: 32,
-  },
-  actionBtn: {
-    width: 72,
-    height: 72,
-    borderRadius: 36,
-    justifyContent: 'center',
-    alignItems: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.4,
-    shadowRadius: 6,
-    elevation: 8,
-  },
+  poster: { width: '100%', height: 220 },
+  posterFallback: { backgroundColor: '#0f3460', justifyContent: 'center', alignItems: 'center' },
+  posterFallbackText: { color: '#888', fontSize: 16 },
+  cardBody: { padding: 14 },
+  cardTitleRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 8 },
+  cardTitle: { color: '#fff', fontSize: 17, fontWeight: 'bold', flex: 1, marginRight: 8 },
+  cardYear: { color: '#888', fontSize: 14, marginTop: 2 },
+  badgeRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginBottom: 10 },
+  typeBadge: { backgroundColor: '#0f3460', borderRadius: 6, paddingHorizontal: 8, paddingVertical: 3 },
+  typeBadgeText: { fontSize: 12 },
+  genreBadge: { backgroundColor: '#1a1a2e', borderWidth: 1, borderColor: '#0f3460', borderRadius: 6, paddingHorizontal: 8, paddingVertical: 3 },
+  genreBadgeText: { color: '#ccc', fontSize: 12 },
+  overview: { color: '#999', fontSize: 14, lineHeight: 20, marginBottom: 14 },
+  cardActions: { flexDirection: 'row', gap: 10 },
   passBtn: {
-    backgroundColor: '#333',
+    flex: 1, borderRadius: 10, paddingVertical: 10, alignItems: 'center',
+    backgroundColor: '#1a1a2e', borderWidth: 1, borderColor: '#333',
   },
+  passBtnText: { color: '#aaa', fontWeight: '600' },
   likeBtn: {
+    flex: 1, borderRadius: 10, paddingVertical: 10, alignItems: 'center',
     backgroundColor: '#e94560',
   },
-  actionBtnText: {
-    fontSize: 28,
-    color: '#fff',
-  },
+  likeBtnText: { color: '#fff', fontWeight: 'bold' },
+  centered: { flex: 1, justifyContent: 'center', alignItems: 'center', paddingTop: 60 },
+  emptyText: { color: '#888', fontSize: 16 },
+  exhaustedText: { color: '#555', textAlign: 'center', paddingVertical: 16, fontSize: 14 },
 });
