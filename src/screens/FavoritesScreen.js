@@ -22,11 +22,16 @@ function PartnerHeader({ user, partner }) {
 }
 
 function Avatar({ user }) {
+  const [imgError, setImgError] = React.useState(false);
   if (!user) return <View style={styles.avatarPlaceholder} />;
   return (
     <View style={styles.avatarWrapper}>
-      {user.image_url ? (
-        <Image source={{ uri: user.image_url }} style={styles.avatar} />
+      {user.image_url && !imgError ? (
+        <Image
+          source={{ uri: user.image_url, cache: 'reload' }}
+          style={styles.avatar}
+          onError={() => setImgError(true)}
+        />
       ) : (
         <View style={[styles.avatar, styles.avatarFallback]}>
           <Text style={styles.avatarInitial}>{user.name?.[0]?.toUpperCase() || '?'}</Text>

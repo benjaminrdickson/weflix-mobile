@@ -1,4 +1,5 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useCallback } from 'react';
+import { useFocusEffect } from '@react-navigation/native';
 import {
   View, Text, TextInput, TouchableOpacity, Image,
   StyleSheet, Alert, ActivityIndicator, ScrollView,
@@ -11,6 +12,7 @@ import { useAuth } from '../context/AuthContext';
 export default function ProfileScreen() {
   const { logout } = useAuth();
   const [user, setUser] = useState(null);
+  const [avatarError, setAvatarError] = useState(false);
   const [editing, setEditing] = useState(false);
   const [form, setForm] = useState({});
   const [saving, setSaving] = useState(false);
@@ -26,12 +28,15 @@ export default function ProfileScreen() {
     const username = await AsyncStorage.getItem('username');
     const { data } = await api.get(`/users/${username}`);
     setUser(data);
-    setForm({ name: data.name, username: data.username, email: data.email, image_url: data.image_url || '' });
+    setAvatarError(false);
+    setForm({ name: data.name, username: data.username, email: data.email });
   }, []);
 
-  useEffect(() => {
-    loadUser();
-  }, [loadUser]);
+  useFocusEffect(
+    useCallback(() => {
+      loadUser();
+    }, [loadUser])
+  );
 
   const handleSave = async () => {
     setSaving(true);
@@ -174,8 +179,12 @@ export default function ProfileScreen() {
       {/* Avatar */}
       <View style={styles.avatarSection}>
         <TouchableOpacity onPress={handlePickPhoto} disabled={uploadingPhoto}>
-          {user.image_url ? (
-            <Image source={{ uri: user.image_url }} style={styles.avatar} />
+          {user.image_url && !avatarError ? (
+            <Image
+              source={{ uri: user.image_url, cache: 'reload' }}
+              style={styles.avatar}
+              onError={() => setAvatarError(true)}
+            />
           ) : (
             <View style={[styles.avatar, styles.avatarFallback]}>
               <Text style={styles.avatarInitial}>{user.name?.[0]?.toUpperCase() || '?'}</Text>
@@ -308,11 +317,16 @@ function InfoRow({ label, value }) {
 }
 
 function PartnerCard({ partner }) {
+  const [imgError, setImgError] = React.useState(false);
   if (!partner) return <Text style={styles.noPartnerText}>No partner info available</Text>;
   return (
     <View style={styles.partnerCard}>
-      {partner.image_url ? (
-        <Image source={{ uri: partner.image_url }} style={styles.partnerAvatar} />
+      {partner.image_url && !imgError ? (
+        <Image
+          source={{ uri: partner.image_url, cache: 'reload' }}
+          style={styles.partnerAvatar}
+          onError={() => setImgError(true)}
+        />
       ) : (
         <View style={[styles.partnerAvatar, styles.avatarFallback]}>
           <Text style={styles.avatarInitial}>{partner.name?.[0]?.toUpperCase() || '?'}</Text>
