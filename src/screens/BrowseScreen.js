@@ -317,7 +317,7 @@ const styles = StyleSheet.create({
   toggleBtnActive: { backgroundColor: '#e94560' },
   toggleText: { color: '#888', fontWeight: '600', fontSize: 14 },
   toggleTextActive: { color: '#fff' },
-  genreScroll: { maxHeight: 40, marginBottom: 8 },
+  genreScroll: { height: 44, marginBottom: 8 },
   genreScrollContent: { paddingHorizontal: 16, gap: 8, alignItems: 'center' },
   genreChip: {
     paddingHorizontal: 14,
