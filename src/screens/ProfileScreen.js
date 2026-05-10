@@ -196,7 +196,6 @@ export default function ProfileScreen() {
             { field: 'name', label: 'Name' },
             { field: 'username', label: 'Username', autoCapitalize: 'none' },
             { field: 'email', label: 'Email', keyboardType: 'email-address', autoCapitalize: 'none' },
-            { field: 'image_url', label: 'Profile Image URL', autoCapitalize: 'none' },
           ].map(({ field, label, keyboardType, autoCapitalize }) => (
             <View key={field} style={styles.fieldGroup}>
               <Text style={styles.fieldLabel}>{label}</Text>
