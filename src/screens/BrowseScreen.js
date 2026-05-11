@@ -4,6 +4,7 @@ import {
   FlatList, StyleSheet, ActivityIndicator, Alert,
   ScrollView,
 } from 'react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import api from '../services/api';
 import DetailModal from '../components/DetailModal';
 
@@ -32,6 +33,7 @@ export default function BrowseScreen() {
 
   const activeRequest = useRef(null);
   const loadingRef = useRef(false);
+  const hasInitialized = useRef(false);
 
   // Fetch genre list whenever content type changes
   useEffect(() => {
@@ -46,8 +48,18 @@ export default function BrowseScreen() {
       .catch(() => {});
   }, [contentType]);
 
-  // Reset and reload when filters change
+  // On mount: resume from last saved page
   useEffect(() => {
+    AsyncStorage.getItem('browse_last_page').then(saved => {
+      const startPage = saved ? parseInt(saved, 10) : 1;
+      loadPage(startPage, true);
+      hasInitialized.current = true;
+    });
+  }, []);
+
+  // On filter changes: reset to page 1
+  useEffect(() => {
+    if (!hasInitialized.current) return;
     loadPage(1, true);
   }, [contentType, selectedGenre, submittedQuery]);
 
@@ -78,11 +90,12 @@ export default function BrowseScreen() {
       const incoming = data.results || [];
       if (reset) {
         setItems(incoming);
-        setPage(1);
+        setPage(targetPage);
       } else {
         setItems(prev => [...prev, ...incoming]);
       }
       if (incoming.length === 0) setExhausted(true);
+      if (incoming.length > 0) AsyncStorage.setItem('browse_last_page', String(targetPage));
     } catch {
       if (activeRequest.current !== requestId) return;
       Alert.alert('Error', 'Could not load content. Please try again.');
