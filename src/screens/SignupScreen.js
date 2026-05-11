@@ -8,7 +8,7 @@ import api from '../services/api';
 export default function SignupScreen({ navigation }) {
   const [form, setForm] = useState({
     name: '', username: '', email: '',
-    password: '', password_confirmation: '', image_url: '',
+    password: '', password_confirmation: '',
   });
   const [loading, setLoading] = useState(false);
 
@@ -49,7 +49,6 @@ export default function SignupScreen({ navigation }) {
           { field: 'name', placeholder: 'Full Name' },
           { field: 'username', placeholder: 'Username', autoCapitalize: 'none' },
           { field: 'email', placeholder: 'Email', keyboardType: 'email-address', autoCapitalize: 'none' },
-          { field: 'image_url', placeholder: 'Profile Image URL (optional)', autoCapitalize: 'none' },
           { field: 'password', placeholder: 'Password', secure: true },
           { field: 'password_confirmation', placeholder: 'Confirm Password', secure: true },
         ].map(({ field, placeholder, secure, keyboardType, autoCapitalize }) => (
