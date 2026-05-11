@@ -31,6 +31,7 @@ export default function BrowseScreen() {
   const [selectedItem, setSelectedItem] = useState(null);
 
   const activeRequest = useRef(null);
+  const loadingRef = useRef(false);
 
   // Fetch genre list whenever content type changes
   useEffect(() => {
@@ -53,6 +54,7 @@ export default function BrowseScreen() {
   const loadPage = useCallback(async (targetPage, reset = false) => {
     const requestId = Date.now();
     activeRequest.current = requestId;
+    loadingRef.current = true;
 
     if (reset) {
       setLoadingFirst(true);
@@ -88,12 +90,13 @@ export default function BrowseScreen() {
       if (activeRequest.current === requestId) {
         setLoadingFirst(false);
         setLoadingMore(false);
+        loadingRef.current = false;
       }
     }
   }, [contentType, selectedGenre, submittedQuery]);
 
   const handleEndReached = () => {
-    if (loadingMore || loadingFirst || exhausted) return;
+    if (loadingRef.current || loadingFirst || exhausted) return;
     const next = page + 1;
     setPage(next);
     loadPage(next);
