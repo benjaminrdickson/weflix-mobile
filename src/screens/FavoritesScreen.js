@@ -1,4 +1,5 @@
-import React, { useEffect, useCallback, useState } from 'react';
+import React, { useCallback, useState } from 'react';
+import { useFocusEffect } from '@react-navigation/native';
 import {
   View, Text, Image, TouchableOpacity, FlatList,
   StyleSheet, ActivityIndicator, Alert, RefreshControl,
@@ -139,9 +140,11 @@ export default function FavoritesScreen() {
     }
   }, [region]);
 
-  useEffect(() => {
-    loadData();
-  }, [loadData]);
+  useFocusEffect(
+    useCallback(() => {
+      loadData();
+    }, [loadData])
+  );
 
   const handleRemove = async (favoriteId) => {
     try {

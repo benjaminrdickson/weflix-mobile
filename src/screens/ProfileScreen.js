@@ -25,11 +25,15 @@ export default function ProfileScreen() {
   const set = (field) => (value) => setForm((prev) => ({ ...prev, [field]: value }));
 
   const loadUser = useCallback(async () => {
-    const username = await AsyncStorage.getItem('username');
-    const { data } = await api.get(`/users/${username}`);
-    setUser(data);
-    setAvatarError(false);
-    setForm({ name: data.name, username: data.username, email: data.email });
+    try {
+      const username = await AsyncStorage.getItem('username');
+      const { data } = await api.get(`/users/${username}`);
+      setUser(data);
+      setAvatarError(false);
+      setForm({ name: data.name, username: data.username, email: data.email });
+    } catch {
+      Alert.alert('Error', 'Could not load profile');
+    }
   }, []);
 
   useFocusEffect(
