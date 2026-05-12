@@ -23,6 +23,12 @@
         {
           "photosPermission": "WeFlix needs access to your photo library to set your profile picture."
         }
+      ],
+      [
+        "expo-notifications",
+        {
+          "color": "#e94560"
+        }
       ]
     ]
   }

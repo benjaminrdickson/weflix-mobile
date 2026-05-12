@@ -1,11 +1,12 @@
 import React, { useState, useCallback } from 'react';
 import { useFocusEffect } from '@react-navigation/native';
 import {
-  View, Text, TextInput, TouchableOpacity, Image,
-  StyleSheet, Alert, ActivityIndicator, ScrollView,
+  View, Text, TextInput, TouchableOpacity, Image, Switch,
+  StyleSheet, Alert, ActivityIndicator, ScrollView, Linking, Platform,
 } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as ImagePicker from 'expo-image-picker';
+import * as Notifications from 'expo-notifications';
 import api from '../services/api';
 import { useAuth } from '../context/AuthContext';
 
@@ -27,6 +28,8 @@ export default function ProfileScreen() {
   const [foundFriend, setFoundFriend] = useState(null);
   const [searchingFriend, setSearchingFriend] = useState(false);
   const [friendsLoading, setFriendsLoading] = useState(false);
+  const [notifPrefs, setNotifPrefs] = useState(null);
+  const [notifPermDenied, setNotifPermDenied] = useState(false);
 
   const set = (field) => (value) => setForm((prev) => ({ ...prev, [field]: value }));
 
@@ -50,11 +53,26 @@ export default function ProfileScreen() {
     } catch {}
   }, []);
 
+  const loadNotifPrefs = useCallback(async () => {
+    try {
+      const { data } = await api.get('/notification_preferences');
+      setNotifPrefs(data);
+    } catch {}
+    try {
+      const asked = await AsyncStorage.getItem('push_permission_asked');
+      if (asked) {
+        const { status } = await Notifications.getPermissionsAsync();
+        setNotifPermDenied(status !== 'granted');
+      }
+    } catch {}
+  }, []);
+
   useFocusEffect(
     useCallback(() => {
       loadUser();
       loadFriends();
-    }, [loadUser, loadFriends])
+      loadNotifPrefs();
+    }, [loadUser, loadFriends, loadNotifPrefs])
   );
 
   const handleSave = async () => {
@@ -207,6 +225,16 @@ export default function ProfileScreen() {
       Alert.alert('Error', 'Could not remove');
     } finally {
       setFriendsLoading(false);
+    }
+  };
+
+  const toggleNotifPref = async (key) => {
+    const updated = { ...notifPrefs, [key]: !notifPrefs[key] };
+    setNotifPrefs(updated);
+    try {
+      await api.patch('/notification_preferences', { [key]: !notifPrefs[key] });
+    } catch {
+      setNotifPrefs(notifPrefs);
     }
   };
 
@@ -443,6 +471,45 @@ export default function ProfileScreen() {
         )}
       </View>
 
+      {/* Notification permission denied banner */}
+      {notifPermDenied && (
+        <TouchableOpacity
+          style={styles.notifBanner}
+          onPress={() => Linking.openSettings()}
+        >
+          <Text style={styles.notifBannerText}>
+            Enable notifications to know when you get a match!
+          </Text>
+          <Text style={styles.notifBannerLink}>Open Settings →</Text>
+        </TouchableOpacity>
+      )}
+
+      {/* Notification preferences */}
+      {notifPrefs && (
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Notification Preferences</Text>
+          {[
+            { key: 'friend_requests',           label: 'Friend requests' },
+            { key: 'friend_request_accepted',   label: 'Friend request accepted' },
+            { key: 'partner_invitations',       label: 'Partner invitations' },
+            { key: 'partner_watchlist_matches', label: 'Partner watchlist matches' },
+            { key: 'group_invitations',         label: 'Group invitations' },
+            { key: 'group_watchlist_matches',   label: 'Group watchlist matches' },
+            ...(user?.is_group_creator ? [{ key: 'group_join_requests', label: 'Group join requests' }] : []),
+          ].map(({ key, label }) => (
+            <View key={key} style={styles.prefRow}>
+              <Text style={styles.prefLabel}>{label}</Text>
+              <Switch
+                value={!!notifPrefs[key]}
+                onValueChange={() => toggleNotifPref(key)}
+                trackColor={{ false: '#0f3460', true: '#e94560' }}
+                thumbColor="#fff"
+              />
+            </View>
+          ))}
+        </View>
+      )}
+
       {/* Logout */}
       <TouchableOpacity style={styles.logoutBtn} onPress={logout}>
         <Text style={styles.logoutText}>Log Out</Text>
@@ -609,4 +676,15 @@ const styles = StyleSheet.create({
   friendAvatar: { width: 40, height: 40, borderRadius: 20, borderWidth: 1, borderColor: '#e94560' },
   removeFriendBtn: { paddingHorizontal: 10, paddingVertical: 6, borderRadius: 8, borderWidth: 1, borderColor: '#555' },
   removeFriendText: { color: '#888', fontSize: 12 },
+  notifBanner: {
+    marginHorizontal: 16, marginBottom: 16, backgroundColor: '#16213e',
+    borderRadius: 12, padding: 14, borderWidth: 1, borderColor: '#e94560',
+  },
+  notifBannerText: { color: '#ccc', fontSize: 13, marginBottom: 4 },
+  notifBannerLink: { color: '#e94560', fontSize: 13, fontWeight: '600' },
+  prefRow: {
+    flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
+    paddingVertical: 10, borderBottomWidth: 1, borderBottomColor: '#0f3460',
+  },
+  prefLabel: { color: '#ccc', fontSize: 15, flex: 1 },
 });
