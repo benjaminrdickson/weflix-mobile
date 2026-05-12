@@ -9,7 +9,7 @@ const Tab = createBottomTabNavigator();
 
 const tabIcon = (label) => ({ focused }) => (
   <Text style={{ fontSize: 20 }}>
-    {label === 'Browse' ? '🎬' : label === 'Favorites' ? '❤️' : '👤'}
+    {label === 'Browse' ? '🎬' : label === 'Partner' ? '❤️' : '👤'}
   </Text>
 );
 
@@ -29,9 +29,9 @@ export default function MainNavigator() {
         options={{ tabBarIcon: tabIcon('Browse') }}
       />
       <Tab.Screen
-        name="Favorites"
+        name="Partner"
         component={FavoritesScreen}
-        options={{ tabBarIcon: tabIcon('Favorites') }}
+        options={{ tabBarIcon: tabIcon('Partner') }}
       />
       <Tab.Screen
         name="Profile"

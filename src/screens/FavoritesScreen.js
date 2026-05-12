@@ -133,7 +133,7 @@ export default function FavoritesScreen() {
       setPartner(userRes.data.relationship?.partner || null);
       setFavorites(favRes.data);
     } catch {
-      Alert.alert('Error', 'Could not load favorites');
+      Alert.alert('Error', 'Could not load watchlist');
     } finally {
       setLoading(false);
       setRefreshing(false);
@@ -172,7 +172,7 @@ export default function FavoritesScreen() {
       keyExtractor={(item) => String(item.favorite_id)}
       ListHeaderComponent={
         <View>
-          <Text style={styles.screenTitle}>Your Watchlist</Text>
+          <Text style={styles.screenTitle}>Partner Watchlist</Text>
           <PartnerHeader user={currentUser} partner={partner} />
           <View style={styles.toggle}>
             {FILTERS.map((f) => (
@@ -190,8 +190,8 @@ export default function FavoritesScreen() {
           {filtered.length === 0 && (
             <Text style={styles.emptyText}>
               {favorites.length === 0
-                ? 'No shared favorites yet — start swiping together!'
-                : `No ${filter === 'movie' ? 'movie' : 'show'} favorites yet`}
+                ? 'No titles in your partner watchlist yet — start swiping together!'
+                : `No ${filter === 'movie' ? 'movie' : 'show'} titles yet`}
             </Text>
           )}
         </View>
