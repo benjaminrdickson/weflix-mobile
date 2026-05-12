@@ -21,6 +21,12 @@ export default function ProfileScreen() {
   const [foundUser, setFoundUser] = useState(null);
   const [searching, setSearching] = useState(false);
   const [relationshipLoading, setRelationshipLoading] = useState(false);
+  const [friends, setFriends] = useState([]);
+  const [pendingRequests, setPendingRequests] = useState([]);
+  const [friendQuery, setFriendQuery] = useState('');
+  const [foundFriend, setFoundFriend] = useState(null);
+  const [searchingFriend, setSearchingFriend] = useState(false);
+  const [friendsLoading, setFriendsLoading] = useState(false);
 
   const set = (field) => (value) => setForm((prev) => ({ ...prev, [field]: value }));
 
@@ -36,10 +42,19 @@ export default function ProfileScreen() {
     }
   }, []);
 
+  const loadFriends = useCallback(async () => {
+    try {
+      const { data } = await api.get('/friendships');
+      setFriends(data.friends);
+      setPendingRequests(data.pending_requests);
+    } catch {}
+  }, []);
+
   useFocusEffect(
     useCallback(() => {
       loadUser();
-    }, [loadUser])
+      loadFriends();
+    }, [loadUser, loadFriends])
   );
 
   const handleSave = async () => {
@@ -137,6 +152,61 @@ export default function ProfileScreen() {
       Alert.alert('Error', 'Could not accept request');
     } finally {
       setRelationshipLoading(false);
+    }
+  };
+
+  const handleFriendSearch = async () => {
+    if (!friendQuery.trim()) return;
+    setSearchingFriend(true);
+    setFoundFriend(null);
+    try {
+      const { data } = await api.get(`/users/${friendQuery.trim()}`);
+      setFoundFriend(data);
+    } catch {
+      Alert.alert('Not found', 'No user found with that username');
+    } finally {
+      setSearchingFriend(false);
+    }
+  };
+
+  const sendFriendRequest = async () => {
+    if (!foundFriend) return;
+    setFriendsLoading(true);
+    try {
+      await api.post('/friendships', { username: foundFriend.username });
+      Alert.alert('Request sent!', `Friend request sent to ${foundFriend.username}`);
+      setFoundFriend(null);
+      setFriendQuery('');
+      await loadFriends();
+    } catch (err) {
+      const message = err.response?.data?.error || 'Could not send friend request';
+      Alert.alert('Error', message);
+    } finally {
+      setFriendsLoading(false);
+    }
+  };
+
+  const acceptFriendRequest = async (friendshipId) => {
+    setFriendsLoading(true);
+    try {
+      await api.patch(`/friendships/${friendshipId}`);
+      await loadFriends();
+    } catch {
+      Alert.alert('Error', 'Could not accept friend request');
+    } finally {
+      setFriendsLoading(false);
+    }
+  };
+
+  const removeFriendship = async (friendshipId) => {
+    setFriendsLoading(true);
+    try {
+      await api.delete(`/friendships/${friendshipId}`);
+      await loadFriends();
+    } catch {
+      Alert.alert('Error', 'Could not remove');
+    } finally {
+      setFriendsLoading(false);
     }
   };
 
@@ -303,6 +373,76 @@ export default function ProfileScreen() {
         )}
       </View>
 
+      {/* Friends */}
+      <View style={styles.section}>
+        <Text style={styles.sectionTitle}>Friends</Text>
+
+        {friendsLoading && <ActivityIndicator color="#e94560" style={{ marginVertical: 8 }} />}
+
+        {/* Friend search */}
+        <View style={styles.searchRow}>
+          <TextInput
+            style={[styles.input, { flex: 1 }]}
+            placeholder="Add friend by username"
+            placeholderTextColor="#888"
+            value={friendQuery}
+            onChangeText={setFriendQuery}
+            autoCapitalize="none"
+          />
+          <TouchableOpacity style={styles.searchBtn} onPress={handleFriendSearch} disabled={searchingFriend}>
+            {searchingFriend
+              ? <ActivityIndicator color="#fff" size="small" />
+              : <Text style={styles.searchBtnText}>Find</Text>}
+          </TouchableOpacity>
+        </View>
+
+        {foundFriend && (
+          <View style={styles.foundUser}>
+            <Text style={styles.foundUserName}>{foundFriend.name} (@{foundFriend.username})</Text>
+            <TouchableOpacity style={styles.sendRequestBtn} onPress={sendFriendRequest}>
+              <Text style={styles.sendRequestText}>Add</Text>
+            </TouchableOpacity>
+          </View>
+        )}
+
+        {/* Pending incoming requests */}
+        {pendingRequests.length > 0 && (
+          <>
+            <Text style={styles.friendSubtitle}>Pending Requests</Text>
+            {pendingRequests.map((req) => (
+              <FriendCard key={req.friendship_id} user={req}>
+                <View style={styles.row}>
+                  <TouchableOpacity style={[styles.btn, styles.acceptBtn]} onPress={() => acceptFriendRequest(req.friendship_id)}>
+                    <Text style={styles.saveBtnText}>Accept</Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity style={[styles.btn, styles.cancelBtn]} onPress={() => removeFriendship(req.friendship_id)}>
+                    <Text style={styles.cancelBtnText}>Decline</Text>
+                  </TouchableOpacity>
+                </View>
+              </FriendCard>
+            ))}
+          </>
+        )}
+
+        {/* Friends list */}
+        {friends.length > 0 && (
+          <>
+            <Text style={styles.friendSubtitle}>Friends</Text>
+            {friends.map((friend) => (
+              <FriendCard key={friend.friendship_id} user={friend}>
+                <TouchableOpacity style={styles.removeFriendBtn} onPress={() => removeFriendship(friend.friendship_id)}>
+                  <Text style={styles.removeFriendText}>Remove</Text>
+                </TouchableOpacity>
+              </FriendCard>
+            ))}
+          </>
+        )}
+
+        {friends.length === 0 && pendingRequests.length === 0 && !friendsLoading && (
+          <Text style={styles.noPartnerText}>No friends yet — search by username to add one.</Text>
+        )}
+      </View>
+
       {/* Logout */}
       <TouchableOpacity style={styles.logoutBtn} onPress={logout}>
         <Text style={styles.logoutText}>Log Out</Text>
@@ -340,6 +480,32 @@ function PartnerCard({ partner }) {
         <Text style={styles.partnerName}>{partner.name}</Text>
         <Text style={styles.partnerUsername}>@{partner.username}</Text>
       </View>
+    </View>
+  );
+}
+
+function FriendCard({ user, children }) {
+  const [imgError, setImgError] = React.useState(false);
+  return (
+    <View style={styles.friendCard}>
+      <View style={styles.friendCardLeft}>
+        {user.image_url && !imgError ? (
+          <Image
+            source={{ uri: user.image_url, cache: 'reload' }}
+            style={styles.friendAvatar}
+            onError={() => setImgError(true)}
+          />
+        ) : (
+          <View style={[styles.friendAvatar, styles.avatarFallback]}>
+            <Text style={styles.avatarInitial}>{user.name?.[0]?.toUpperCase() || '?'}</Text>
+          </View>
+        )}
+        <View>
+          <Text style={styles.partnerName}>{user.name}</Text>
+          <Text style={styles.partnerUsername}>@{user.username}</Text>
+        </View>
+      </View>
+      {children}
     </View>
   );
 }
@@ -437,4 +603,10 @@ const styles = StyleSheet.create({
   endBtnText: { color: '#e94560', fontWeight: '600' },
   logoutBtn: { marginHorizontal: 16, backgroundColor: '#16213e', borderRadius: 12, padding: 16, alignItems: 'center', borderWidth: 1, borderColor: '#e94560' },
   logoutText: { color: '#e94560', fontSize: 16, fontWeight: 'bold' },
+  friendSubtitle: { color: '#888', fontSize: 13, fontWeight: '600', marginTop: 12, marginBottom: 6, textTransform: 'uppercase', letterSpacing: 0.5 },
+  friendCard: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingVertical: 8, borderBottomWidth: 1, borderBottomColor: '#0f3460' },
+  friendCardLeft: { flexDirection: 'row', alignItems: 'center', gap: 10, flex: 1 },
+  friendAvatar: { width: 40, height: 40, borderRadius: 20, borderWidth: 1, borderColor: '#e94560' },
+  removeFriendBtn: { paddingHorizontal: 10, paddingVertical: 6, borderRadius: 8, borderWidth: 1, borderColor: '#555' },
+  removeFriendText: { color: '#888', fontSize: 12 },
 });
