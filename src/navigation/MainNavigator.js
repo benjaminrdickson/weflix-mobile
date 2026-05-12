@@ -4,12 +4,13 @@ import { Text } from 'react-native';
 import BrowseScreen from '../screens/BrowseScreen';
 import FavoritesScreen from '../screens/FavoritesScreen';
 import ProfileScreen from '../screens/ProfileScreen';
+import GroupsNavigator from './GroupsNavigator';
 
 const Tab = createBottomTabNavigator();
 
 const tabIcon = (label) => ({ focused }) => (
   <Text style={{ fontSize: 20 }}>
-    {label === 'Browse' ? '🎬' : label === 'Partner' ? '❤️' : '👤'}
+    {label === 'Browse' ? '🎬' : label === 'Partner' ? '❤️' : label === 'Groups' ? '👥' : '👤'}
   </Text>
 );
 
@@ -32,6 +33,11 @@ export default function MainNavigator() {
         name="Partner"
         component={FavoritesScreen}
         options={{ tabBarIcon: tabIcon('Partner') }}
+      />
+      <Tab.Screen
+        name="Groups"
+        component={GroupsNavigator}
+        options={{ tabBarIcon: tabIcon('Groups') }}
       />
       <Tab.Screen
         name="Profile"

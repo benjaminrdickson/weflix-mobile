@@ -173,7 +173,13 @@ export default function FavoritesScreen() {
       ListHeaderComponent={
         <View>
           <Text style={styles.screenTitle}>Partner Watchlist</Text>
-          <PartnerHeader user={currentUser} partner={partner} />
+          {partner ? (
+            <PartnerHeader user={currentUser} partner={partner} />
+          ) : (
+            <Text style={styles.noPartnerText}>
+              Connect with a partner to start a shared watchlist
+            </Text>
+          )}
           <View style={styles.toggle}>
             {FILTERS.map((f) => (
               <TouchableOpacity
@@ -248,6 +254,7 @@ const styles = StyleSheet.create({
   toggleBtnActive: { backgroundColor: '#e94560' },
   toggleText: { color: '#888', fontWeight: '600', fontSize: 14 },
   toggleTextActive: { color: '#fff' },
+  noPartnerText: { color: '#888', textAlign: 'center', marginTop: 8, marginBottom: 24, fontSize: 15, paddingHorizontal: 32 },
   emptyText: { color: '#888', textAlign: 'center', marginTop: 40, fontSize: 16, paddingHorizontal: 32 },
   card: {
     backgroundColor: '#16213e',

@@ -1,8 +1,9 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
+import { useFocusEffect } from '@react-navigation/native';
 import {
   View, Text, Image, TextInput, TouchableOpacity,
   FlatList, StyleSheet, ActivityIndicator, Alert,
-  ScrollView,
+  ScrollView, Modal,
 } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import api from '../services/api';
@@ -31,9 +32,20 @@ export default function BrowseScreen() {
 
   const [selectedItem, setSelectedItem] = useState(null);
 
+  const [groups, setGroups]           = useState([]);
+  const [browseContext, setBrowseContext] = useState('partner');
+  const [contextPickerVisible, setContextPickerVisible] = useState(false);
+
   const activeRequest = useRef(null);
   const loadingRef = useRef(false);
   const hasInitialized = useRef(false);
+
+  // Load groups list on focus
+  useFocusEffect(
+    useCallback(() => {
+      api.get('/groups').then(({ data }) => setGroups(data)).catch(() => {});
+    }, [])
+  );
 
   // Fetch genre list whenever content type changes
   useEffect(() => {
@@ -61,7 +73,7 @@ export default function BrowseScreen() {
   useEffect(() => {
     if (!hasInitialized.current) return;
     loadPage(1, true);
-  }, [contentType, selectedGenre, submittedQuery]);
+  }, [contentType, selectedGenre, submittedQuery, browseContext]);
 
   const loadPage = useCallback(async (targetPage, reset = false) => {
     const requestId = Date.now();
@@ -82,6 +94,7 @@ export default function BrowseScreen() {
           page: targetPage,
           genre_id: selectedGenre || undefined,
           query: submittedQuery || undefined,
+          context: browseContext,
         },
       });
 
@@ -121,7 +134,11 @@ export default function BrowseScreen() {
 
   const handleLike = async (item) => {
     try {
-      await api.post('/likes', { api_movie_id: item.id, content_type: item.content_type });
+      if (browseContext === 'partner') {
+        await api.post('/likes', { api_movie_id: item.id, content_type: item.content_type });
+      } else {
+        await api.post(`/groups/${browseContext}/likes`, { api_movie_id: item.id, content_type: item.content_type });
+      }
     } catch {
       // fail silently
     }
@@ -210,6 +227,19 @@ export default function BrowseScreen() {
         ) : null}
       </View>
 
+      {/* Context selector */}
+      {(() => {
+        const contextLabel = browseContext === 'partner'
+          ? 'Partner'
+          : groups.find(g => String(g.id) === browseContext)?.name || 'Group';
+        return (
+          <TouchableOpacity style={styles.contextPill} onPress={() => setContextPickerVisible(true)}>
+            <Text style={styles.contextPillLabel}>Browsing for: </Text>
+            <Text style={styles.contextPillValue}>{contextLabel} ▾</Text>
+          </TouchableOpacity>
+        );
+      })()}
+
       {/* Content type toggle */}
       <View style={styles.toggle}>
         {CONTENT_TYPES.map(({ key, label }) => (
@@ -288,6 +318,33 @@ export default function BrowseScreen() {
         onPass={handlePass}
         onClose={() => setSelectedItem(null)}
       />
+
+      <Modal visible={contextPickerVisible} transparent animationType="fade">
+        <TouchableOpacity style={styles.contextModalOverlay} activeOpacity={1} onPress={() => setContextPickerVisible(false)}>
+          <View style={styles.contextModalBox}>
+            <Text style={styles.contextModalTitle}>Browse for...</Text>
+            <TouchableOpacity
+              style={[styles.contextOption, browseContext === 'partner' && styles.contextOptionActive]}
+              onPress={() => { setBrowseContext('partner'); setContextPickerVisible(false); }}
+            >
+              <Text style={[styles.contextOptionText, browseContext === 'partner' && styles.contextOptionTextActive]}>
+                ❤️  Partner
+              </Text>
+            </TouchableOpacity>
+            {groups.map(g => (
+              <TouchableOpacity
+                key={g.id}
+                style={[styles.contextOption, browseContext === String(g.id) && styles.contextOptionActive]}
+                onPress={() => { setBrowseContext(String(g.id)); setContextPickerVisible(false); }}
+              >
+                <Text style={[styles.contextOptionText, browseContext === String(g.id) && styles.contextOptionTextActive]}>
+                  👥  {g.name}
+                </Text>
+              </TouchableOpacity>
+            ))}
+          </View>
+        </TouchableOpacity>
+      </Modal>
     </View>
   );
 }
@@ -384,4 +441,26 @@ const styles = StyleSheet.create({
   centered: { flex: 1, justifyContent: 'center', alignItems: 'center', paddingTop: 60 },
   emptyText: { color: '#888', fontSize: 16 },
   exhaustedText: { color: '#555', textAlign: 'center', paddingVertical: 16, fontSize: 14 },
+  contextPill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    alignSelf: 'flex-start',
+    marginHorizontal: 16,
+    marginBottom: 8,
+    backgroundColor: '#16213e',
+    borderRadius: 20,
+    paddingHorizontal: 14,
+    paddingVertical: 7,
+    borderWidth: 1,
+    borderColor: '#0f3460',
+  },
+  contextPillLabel: { color: '#888', fontSize: 13 },
+  contextPillValue: { color: '#e94560', fontSize: 13, fontWeight: '600' },
+  contextModalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'center', alignItems: 'center' },
+  contextModalBox: { backgroundColor: '#16213e', borderRadius: 16, padding: 20, width: '80%', borderWidth: 1, borderColor: '#0f3460' },
+  contextModalTitle: { color: '#888', fontSize: 13, fontWeight: '600', textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 12 },
+  contextOption: { paddingVertical: 13, paddingHorizontal: 12, borderRadius: 10, marginBottom: 6 },
+  contextOptionActive: { backgroundColor: '#e94560' },
+  contextOptionText: { color: '#ccc', fontSize: 16 },
+  contextOptionTextActive: { color: '#fff', fontWeight: 'bold' },
 });
