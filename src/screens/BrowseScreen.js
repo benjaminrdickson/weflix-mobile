@@ -119,7 +119,7 @@ export default function BrowseScreen() {
         loadingRef.current = false;
       }
     }
-  }, [contentType, selectedGenre, submittedQuery]);
+  }, [contentType, selectedGenre, submittedQuery, browseContext]);
 
   const handleEndReached = () => {
     if (loadingRef.current || loadingFirst || exhausted) return;
