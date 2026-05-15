@@ -203,11 +203,11 @@ export default function GroupDetailScreen({ route, navigation }) {
         </TouchableOpacity>
       </View>
 
-      {/* Pending invitations (creator only) */}
-      {group.is_creator && group.pending_invitations.length > 0 && (
+      {/* Invitations awaiting creator approval */}
+      {group.is_creator && group.pending_invitations.filter(inv => inv.status === 'accepted').length > 0 && (
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Pending Invitations</Text>
-          {group.pending_invitations.map(inv => (
+          <Text style={styles.sectionTitle}>Awaiting Your Approval</Text>
+          {group.pending_invitations.filter(inv => inv.status === 'accepted').map(inv => (
             <View key={inv.invitation_id} style={styles.invitationRow}>
               <Text style={styles.inviteeName}>{inv.invitee.name} <Text style={styles.inviteeUsername}>@{inv.invitee.username}</Text></Text>
               <View style={styles.inviteActions}>
@@ -218,6 +218,19 @@ export default function GroupDetailScreen({ route, navigation }) {
                   <Text style={styles.rejectBtnText}>Reject</Text>
                 </TouchableOpacity>
               </View>
+            </View>
+          ))}
+        </View>
+      )}
+
+      {/* Invitations sent, awaiting invitee response */}
+      {group.is_creator && group.pending_invitations.filter(inv => inv.status === 'pending').length > 0 && (
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Sent Invites</Text>
+          {group.pending_invitations.filter(inv => inv.status === 'pending').map(inv => (
+            <View key={inv.invitation_id} style={styles.invitationRow}>
+              <Text style={styles.inviteeName}>{inv.invitee.name} <Text style={styles.inviteeUsername}>@{inv.invitee.username}</Text></Text>
+              <Text style={styles.inviteSentLabel}>Awaiting response</Text>
             </View>
           ))}
         </View>
@@ -338,6 +351,7 @@ const styles = StyleSheet.create({
   approveBtnText: { color: '#fff', fontWeight: 'bold' },
   rejectBtn: { flex: 1, backgroundColor: '#0f3460', borderRadius: 8, padding: 10, alignItems: 'center' },
   rejectBtnText: { color: '#aaa', fontWeight: '600' },
+  inviteSentLabel: { color: '#888', fontSize: 12, fontStyle: 'italic' },
   emptyText: { color: '#888', fontSize: 14, textAlign: 'center', paddingVertical: 8 },
   watchCard: { backgroundColor: '#1a1a2e', borderRadius: 12, marginBottom: 12, borderWidth: 1, borderColor: '#0f3460', overflow: 'hidden' },
   watchCardTop: { flexDirection: 'row', padding: 10, gap: 10 },
