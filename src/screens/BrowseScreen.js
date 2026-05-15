@@ -55,14 +55,13 @@ export default function BrowseScreen() {
         const map = {};
         data.forEach(g => { map[g.id] = g.name; });
         setGenreMap(map);
-        setSelectedGenre(null);
       })
       .catch(() => {});
   }, [contentType]);
 
   // On mount: resume from last saved page
   useEffect(() => {
-    AsyncStorage.getItem('browse_last_page').then(saved => {
+    AsyncStorage.getItem('browse_last_page_partner').then(saved => {
       const startPage = saved ? parseInt(saved, 10) : 1;
       loadPage(startPage, true);
       hasInitialized.current = true;
@@ -108,7 +107,7 @@ export default function BrowseScreen() {
         setItems(prev => [...prev, ...incoming]);
       }
       if (incoming.length === 0) setExhausted(true);
-      if (incoming.length > 0) AsyncStorage.setItem('browse_last_page', String(targetPage));
+      if (incoming.length > 0) AsyncStorage.setItem(`browse_last_page_${browseContext}`, String(targetPage));
     } catch {
       if (activeRequest.current !== requestId) return;
       Alert.alert('Error', 'Could not load content. Please try again.');
@@ -246,7 +245,7 @@ export default function BrowseScreen() {
           <TouchableOpacity
             key={key}
             style={[styles.toggleBtn, contentType === key && styles.toggleBtnActive]}
-            onPress={() => setContentType(key)}
+            onPress={() => { setSelectedGenre(null); setContentType(key); }}
           >
             <Text style={[styles.toggleText, contentType === key && styles.toggleTextActive]}>
               {label}

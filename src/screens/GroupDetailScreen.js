@@ -127,7 +127,8 @@ export default function GroupDetailScreen({ route, navigation }) {
     try {
       const { data } = await api.get('/friendships');
       const memberIds = new Set((group?.members || []).map(m => m.id));
-      setFriends(data.friends.filter(f => !memberIds.has(f.id)));
+      const pendingIds = new Set((group?.pending_invitations || []).map(inv => inv.invitee.id));
+      setFriends(data.friends.filter(f => !memberIds.has(f.id) && !pendingIds.has(f.id)));
     } catch {
       Alert.alert('Error', 'Could not load friends');
     } finally {
@@ -238,7 +239,7 @@ export default function GroupDetailScreen({ route, navigation }) {
 
       {/* Rename modal */}
       <Modal visible={renameVisible} transparent animationType="fade">
-        <View style={styles.modalOverlay}>
+        <TouchableOpacity style={styles.modalOverlay} activeOpacity={1} onPress={() => setRenameVisible(false)}>
           <View style={styles.modalBox}>
             <Text style={styles.modalTitle}>Rename Group</Text>
             <TextInput
@@ -260,18 +261,28 @@ export default function GroupDetailScreen({ route, navigation }) {
               </TouchableOpacity>
             </View>
           </View>
-        </View>
+        </TouchableOpacity>
       </Modal>
 
       {/* Invite modal */}
       <Modal visible={inviteVisible} transparent animationType="fade">
-        <View style={styles.modalOverlay}>
+        <TouchableOpacity style={styles.modalOverlay} activeOpacity={1} onPress={() => setInviteVisible(false)}>
           <View style={[styles.modalBox, { maxHeight: '70%' }]}>
             <Text style={styles.modalTitle}>Invite a Friend</Text>
             {loadingFriends ? (
               <ActivityIndicator color="#e94560" style={{ marginVertical: 24 }} />
             ) : friends.length === 0 ? (
-              <Text style={styles.emptyText}>No friends available to invite.</Text>
+              <View>
+                <Text style={styles.emptyText}>
+                  You need confirmed friends to invite someone. Add friends from your Profile first.
+                </Text>
+                <TouchableOpacity
+                  style={styles.goToProfileBtn}
+                  onPress={() => { setInviteVisible(false); navigation.navigate('Profile'); }}
+                >
+                  <Text style={styles.goToProfileBtnText}>Go to Profile →</Text>
+                </TouchableOpacity>
+              </View>
             ) : (
               <FlatList
                 data={friends}
@@ -299,7 +310,7 @@ export default function GroupDetailScreen({ route, navigation }) {
               <Text style={styles.modalCancelText}>Close</Text>
             </TouchableOpacity>
           </View>
-        </View>
+        </TouchableOpacity>
       </Modal>
     </ScrollView>
   );
@@ -358,4 +369,6 @@ const styles = StyleSheet.create({
   friendRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingVertical: 10, borderBottomWidth: 1, borderBottomColor: '#0f3460' },
   friendName: { color: '#fff', fontSize: 15, fontWeight: '600' },
   friendUsername: { color: '#888', fontSize: 13 },
+  goToProfileBtn: { marginTop: 16, backgroundColor: '#e94560', borderRadius: 10, padding: 12, alignItems: 'center' },
+  goToProfileBtnText: { color: '#fff', fontWeight: 'bold', fontSize: 14 },
 });

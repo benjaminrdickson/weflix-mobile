@@ -92,7 +92,7 @@ export default function GroupsScreen({ navigation }) {
       )}
 
       <Modal visible={createVisible} transparent animationType="fade">
-        <View style={styles.modalOverlay}>
+        <TouchableOpacity style={styles.modalOverlay} activeOpacity={1} onPress={() => { setCreateVisible(false); setNewGroupName(''); }}>
           <View style={styles.modalBox}>
             <Text style={styles.modalTitle}>New Group</Text>
             <TextInput
@@ -124,7 +124,7 @@ export default function GroupsScreen({ navigation }) {
               </TouchableOpacity>
             </View>
           </View>
-        </View>
+        </TouchableOpacity>
       </Modal>
     </View>
   );

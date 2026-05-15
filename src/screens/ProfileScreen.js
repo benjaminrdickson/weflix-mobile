@@ -122,6 +122,7 @@ export default function ProfileScreen() {
         headers: { 'Content-Type': 'multipart/form-data' },
       });
       setUser(prev => ({ ...prev, image_url: data.image_url }));
+      setAvatarError(false);
     } catch (err) {
       Alert.alert('Error', err?.message || 'Could not upload photo. Please try again.');
     } finally {
@@ -321,7 +322,7 @@ export default function ProfileScreen() {
             </View>
           ))}
           <View style={styles.row}>
-            <TouchableOpacity style={[styles.btn, styles.cancelBtn]} onPress={() => setEditing(false)}>
+            <TouchableOpacity style={[styles.btn, styles.cancelBtn]} onPress={() => { setEditing(false); setForm({ name: user.name, username: user.username, email: user.email }); }}>
               <Text style={styles.cancelBtnText}>Cancel</Text>
             </TouchableOpacity>
             <TouchableOpacity style={[styles.btn, styles.saveBtn]} onPress={handleSave} disabled={saving}>

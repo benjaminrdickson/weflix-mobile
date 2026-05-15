@@ -9,7 +9,7 @@ import AuthNavigator from './src/navigation/AuthNavigator';
 import MainNavigator from './src/navigation/MainNavigator';
 import { AuthContext } from './src/context/AuthContext';
 import { NotificationProvider } from './src/context/NotificationContext';
-import api from './src/services/api';
+import api, { setUnauthorizedHandler } from './src/services/api';
 
 Notifications.setNotificationHandler({
   handleNotification: async () => ({
@@ -68,6 +68,10 @@ function App() {
   const [isLoading, setIsLoading] = useState(true);
   const [userToken, setUserToken] = useState(null);
   const [showPermissionModal, setShowPermissionModal] = useState(false);
+
+  useEffect(() => {
+    setUnauthorizedHandler(() => setUserToken(null));
+  }, []);
 
   useEffect(() => {
     AsyncStorage.getItem('jwt').then((token) => {
