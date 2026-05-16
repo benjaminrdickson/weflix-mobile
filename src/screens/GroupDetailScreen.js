@@ -84,6 +84,7 @@ export default function GroupDetailScreen({ route, navigation }) {
   const [inviteVisible, setInviteVisible] = useState(false);
   const [friends, setFriends] = useState([]);
   const [loadingFriends, setLoadingFriends] = useState(false);
+  const [watchlistFilter, setWatchlistFilter] = useState('all');
   const [inviting, setInviting] = useState(null);
 
   const loadGroup = useCallback(async () => {
@@ -253,15 +254,33 @@ export default function GroupDetailScreen({ route, navigation }) {
             </TouchableOpacity>
           )}
         </View>
-        {group.watchlist.length === 0 ? (
-          <Text style={styles.emptyText}>
-            No titles yet — browse as this group to start adding matches!
-          </Text>
-        ) : (
-          group.watchlist.map(item => (
+        <View style={styles.toggle}>
+          {['all', 'movie', 'tv'].map(f => (
+            <TouchableOpacity
+              key={f}
+              style={[styles.toggleBtn, watchlistFilter === f && styles.toggleBtnActive]}
+              onPress={() => setWatchlistFilter(f)}
+            >
+              <Text style={[styles.toggleText, watchlistFilter === f && styles.toggleTextActive]}>
+                {f === 'all' ? 'All' : f === 'movie' ? 'Movies' : 'Shows'}
+              </Text>
+            </TouchableOpacity>
+          ))}
+        </View>
+        {(() => {
+          const filtered = watchlistFilter === 'all'
+            ? group.watchlist
+            : group.watchlist.filter(item => item.content_type === watchlistFilter);
+          return filtered.length === 0 ? (
+            <Text style={styles.emptyText}>
+              {group.watchlist.length === 0
+                ? 'No titles yet — browse as this group to start adding matches!'
+                : `No ${watchlistFilter === 'movie' ? 'movie' : 'show'} titles yet`}
+            </Text>
+          ) : filtered.map(item => (
             <WatchlistCard key={item.watchlist_item_id} item={item} onRemove={handleRemoveWatchlistItem} />
-          ))
-        )}
+          ));
+        })()}
       </View>
 
       {/* Leave group (non-creator members only) */}
@@ -368,6 +387,11 @@ const styles = StyleSheet.create({
   section: { backgroundColor: '#16213e', borderRadius: 16, marginHorizontal: 16, marginBottom: 16, padding: 16, borderWidth: 1, borderColor: '#0f3460' },
   watchlistHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 },
   sectionTitle: { color: '#fff', fontSize: 17, fontWeight: 'bold' },
+  toggle: { flexDirection: 'row', backgroundColor: '#0f3460', borderRadius: 12, padding: 4, marginBottom: 16 },
+  toggleBtn: { flex: 1, paddingVertical: 9, borderRadius: 10, alignItems: 'center' },
+  toggleBtnActive: { backgroundColor: '#e94560' },
+  toggleText: { color: '#888', fontWeight: '600', fontSize: 14 },
+  toggleTextActive: { color: '#fff' },
   invitationRow: { paddingVertical: 10, borderBottomWidth: 1, borderBottomColor: '#0f3460' },
   inviteeName: { color: '#fff', fontSize: 15, marginBottom: 8 },
   inviteeUsername: { color: '#888', fontSize: 13 },
