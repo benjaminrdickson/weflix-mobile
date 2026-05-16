@@ -159,6 +159,25 @@ export default function GroupDetailScreen({ route, navigation }) {
     }
   };
 
+  const handleLeaveGroup = () => {
+    Alert.alert('Leave Group', `Leave "${group.name}"?`, [
+      { text: 'Cancel', style: 'cancel' },
+      {
+        text: 'Leave',
+        style: 'destructive',
+        onPress: async () => {
+          try {
+            await api.delete(`/groups/${groupId}/leave`);
+            navigation.goBack();
+          } catch (err) {
+            const msg = err.response?.data?.error || 'Could not leave group';
+            Alert.alert('Error', msg);
+          }
+        },
+      },
+    ]);
+  };
+
   const handleRemoveWatchlistItem = async (watchlistItemId) => {
     try {
       await api.delete(`/groups/${groupId}/watchlist/${watchlistItemId}`);
@@ -179,35 +198,27 @@ export default function GroupDetailScreen({ route, navigation }) {
     );
   }
 
+  const awaitingApproval = group.pending_invitations.filter(inv => inv.status === 'accepted');
+  const sentInvites = group.pending_invitations.filter(inv => inv.status === 'pending');
+
   return (
     <ScrollView style={styles.container} contentContainerStyle={styles.content}>
 
-      {/* Group name + rename */}
-      <View style={styles.titleRow}>
-        <Text style={styles.groupName}>{group.name}</Text>
-        {group.is_creator && (
-          <TouchableOpacity onPress={() => { setRenameValue(group.name); setRenameVisible(true); }}>
-            <Text style={styles.editLink}>Edit</Text>
-          </TouchableOpacity>
-        )}
-      </View>
-
-      {/* Members */}
-      <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Members</Text>
+      {/* Compact member bar */}
+      <View style={styles.memberBar}>
         <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.membersRow}>
           {group.members.map(m => <MemberAvatar key={m.id} user={m} />)}
         </ScrollView>
         <TouchableOpacity style={styles.inviteBtn} onPress={openInvite}>
-          <Text style={styles.inviteBtnText}>+ Invite a Friend</Text>
+          <Text style={styles.inviteBtnText}>+ Invite</Text>
         </TouchableOpacity>
       </View>
 
-      {/* Invitations awaiting creator approval */}
-      {group.is_creator && group.pending_invitations.filter(inv => inv.status === 'accepted').length > 0 && (
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Awaiting Your Approval</Text>
-          {group.pending_invitations.filter(inv => inv.status === 'accepted').map(inv => (
+      {/* Creator: invitations awaiting approval */}
+      {group.is_creator && awaitingApproval.length > 0 && (
+        <View style={styles.approvalSection}>
+          <Text style={styles.approvalTitle}>Awaiting Your Approval</Text>
+          {awaitingApproval.map(inv => (
             <View key={inv.invitation_id} style={styles.invitationRow}>
               <Text style={styles.inviteeName}>{inv.invitee.name} <Text style={styles.inviteeUsername}>@{inv.invitee.username}</Text></Text>
               <View style={styles.inviteActions}>
@@ -223,25 +234,28 @@ export default function GroupDetailScreen({ route, navigation }) {
         </View>
       )}
 
-      {/* Invitations sent, awaiting invitee response */}
-      {group.is_creator && group.pending_invitations.filter(inv => inv.status === 'pending').length > 0 && (
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Sent Invites</Text>
-          {group.pending_invitations.filter(inv => inv.status === 'pending').map(inv => (
-            <View key={inv.invitation_id} style={styles.invitationRow}>
-              <Text style={styles.inviteeName}>{inv.invitee.name} <Text style={styles.inviteeUsername}>@{inv.invitee.username}</Text></Text>
-              <Text style={styles.inviteSentLabel}>Awaiting response</Text>
-            </View>
-          ))}
+      {/* Creator: sent invites pill */}
+      {group.is_creator && sentInvites.length > 0 && (
+        <View style={styles.sentPill}>
+          <Text style={styles.sentPillText}>
+            {sentInvites.length} invite{sentInvites.length > 1 ? 's' : ''} sent — awaiting response
+          </Text>
         </View>
       )}
 
-      {/* Watchlist */}
+      {/* Watchlist — primary content */}
       <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Group Watchlist</Text>
+        <View style={styles.watchlistHeader}>
+          <Text style={styles.sectionTitle}>Watchlist</Text>
+          {group.is_creator && (
+            <TouchableOpacity onPress={() => { setRenameValue(group.name); setRenameVisible(true); }}>
+              <Text style={styles.editLink}>Rename</Text>
+            </TouchableOpacity>
+          )}
+        </View>
         {group.watchlist.length === 0 ? (
           <Text style={styles.emptyText}>
-            No titles yet — like the same titles as your group members to add them here!
+            No titles yet — browse as this group to start adding matches!
           </Text>
         ) : (
           group.watchlist.map(item => (
@@ -249,6 +263,13 @@ export default function GroupDetailScreen({ route, navigation }) {
           ))
         )}
       </View>
+
+      {/* Leave group (non-creator members only) */}
+      {!group.is_creator && (
+        <TouchableOpacity style={styles.leaveBtn} onPress={handleLeaveGroup}>
+          <Text style={styles.leaveBtnText}>Leave Group</Text>
+        </TouchableOpacity>
+      )}
 
       {/* Rename modal */}
       <Modal visible={renameVisible} transparent animationType="fade">
@@ -333,16 +354,20 @@ const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#1a1a2e' },
   content: { paddingBottom: 40 },
   centered: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#1a1a2e' },
-  titleRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 16, paddingTop: 16, marginBottom: 8 },
-  groupName: { color: '#fff', fontSize: 22, fontWeight: 'bold', flex: 1 },
-  editLink: { color: '#e94560', fontSize: 15, fontWeight: '600', marginLeft: 12 },
-  section: { backgroundColor: '#16213e', borderRadius: 16, marginHorizontal: 16, marginBottom: 16, padding: 16, borderWidth: 1, borderColor: '#0f3460' },
-  sectionTitle: { color: '#fff', fontSize: 17, fontWeight: 'bold', marginBottom: 12 },
-  membersRow: { gap: 8, paddingBottom: 4 },
+  editLink: { color: '#e94560', fontSize: 14, fontWeight: '600' },
+  memberBar: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16, paddingVertical: 12, gap: 12 },
+  membersRow: { gap: 8, flexDirection: 'row', alignItems: 'center' },
   memberAvatarWrap: { marginRight: 4 },
   memberName: { color: '#888', fontSize: 11, marginTop: 4, textAlign: 'center', maxWidth: 52 },
-  inviteBtn: { marginTop: 12, borderWidth: 1, borderColor: '#e94560', borderRadius: 10, padding: 10, alignItems: 'center' },
-  inviteBtnText: { color: '#e94560', fontWeight: '600', fontSize: 14 },
+  inviteBtn: { borderWidth: 1, borderColor: '#e94560', borderRadius: 10, paddingHorizontal: 12, paddingVertical: 8 },
+  inviteBtnText: { color: '#e94560', fontWeight: '600', fontSize: 13 },
+  approvalSection: { backgroundColor: '#16213e', borderRadius: 16, marginHorizontal: 16, marginBottom: 12, padding: 16, borderWidth: 1, borderColor: '#e94560' },
+  approvalTitle: { color: '#e94560', fontSize: 14, fontWeight: 'bold', marginBottom: 10 },
+  sentPill: { marginHorizontal: 16, marginBottom: 12, backgroundColor: '#0f3460', borderRadius: 10, paddingHorizontal: 14, paddingVertical: 8 },
+  sentPillText: { color: '#888', fontSize: 13 },
+  section: { backgroundColor: '#16213e', borderRadius: 16, marginHorizontal: 16, marginBottom: 16, padding: 16, borderWidth: 1, borderColor: '#0f3460' },
+  watchlistHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 },
+  sectionTitle: { color: '#fff', fontSize: 17, fontWeight: 'bold' },
   invitationRow: { paddingVertical: 10, borderBottomWidth: 1, borderBottomColor: '#0f3460' },
   inviteeName: { color: '#fff', fontSize: 15, marginBottom: 8 },
   inviteeUsername: { color: '#888', fontSize: 13 },
@@ -351,7 +376,8 @@ const styles = StyleSheet.create({
   approveBtnText: { color: '#fff', fontWeight: 'bold' },
   rejectBtn: { flex: 1, backgroundColor: '#0f3460', borderRadius: 8, padding: 10, alignItems: 'center' },
   rejectBtnText: { color: '#aaa', fontWeight: '600' },
-  inviteSentLabel: { color: '#888', fontSize: 12, fontStyle: 'italic' },
+  leaveBtn: { marginTop: 8, marginBottom: 32, marginHorizontal: 16, borderRadius: 12, padding: 15, alignItems: 'center', borderWidth: 1, borderColor: '#e94560' },
+  leaveBtnText: { color: '#e94560', fontWeight: '600', fontSize: 15 },
   emptyText: { color: '#888', fontSize: 14, textAlign: 'center', paddingVertical: 8 },
   watchCard: { backgroundColor: '#1a1a2e', borderRadius: 12, marginBottom: 12, borderWidth: 1, borderColor: '#0f3460', overflow: 'hidden' },
   watchCardTop: { flexDirection: 'row', padding: 10, gap: 10 },
