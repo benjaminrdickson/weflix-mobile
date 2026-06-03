@@ -17,16 +17,20 @@ function timeAgo(dateString) {
 }
 
 const TYPE_ICON = {
-  friend_request:              '👋',
-  friend_request_accepted:     '🤝',
-  partner_invitation:          '💌',
-  partner_invitation_approved: '❤️',
-  partner_watchlist_match:     '🎬',
-  group_invitation:            '👥',
-  group_invitation_approved:   '✅',
-  group_watchlist_match:       '🎉',
-  group_join_request:          '📋',
-  group_ownership_transfer:    '👑',
+  friend_request:                  '👋',
+  friend_request_accepted:         '🤝',
+  partner_invitation:              '💌',
+  partner_invitation_approved:     '❤️',
+  partner_watchlist_match:         '🎬',
+  group_invitation:                '👥',
+  group_invitation_approved:       '✅',
+  group_watchlist_match:           '🎉',
+  group_join_request:              '📋',
+  group_ownership_transfer:        '👑',
+  group_ownership_invite:          '👑',
+  group_ownership_invite_accepted: '✅',
+  group_ownership_invite_declined: '❌',
+  group_ownership_invite_cancelled:'↩️',
 };
 
 const TAPPABLE_TYPES = ['partner_watchlist_match', 'group_watchlist_match', 'group_join_request'];
@@ -115,10 +119,24 @@ export default function NotificationsScreen({ navigation }) {
     }
   };
 
+  const handleOwnershipInviteResponse = async (item, ownershipContext, accepted) => {
+    try {
+      await edgeFn.patch(
+        `group-ownership-invites/${ownershipContext.group_id}`,
+        { invite_id: ownershipContext.invite_id, accepted }
+      );
+      setResponses(prev => ({ ...prev, [item.id]: accepted ? 'accepted' : 'declined' }));
+    } catch (err) {
+      const msg = err.response?.data?.error || 'Could not respond to invite';
+      Alert.alert('Error', msg);
+    }
+  };
+
   const renderItem = ({ item }) => {
     const tappable = TAPPABLE_TYPES.includes(item.notification_type);
-    const isGroupInvite  = item.notification_type === 'group_invitation';
-    const isFriendRequest = item.notification_type === 'friend_request';
+    const isGroupInvite    = item.notification_type === 'group_invitation';
+    const isFriendRequest  = item.notification_type === 'friend_request';
+    const isOwnershipInvite = item.notification_type === 'group_ownership_invite';
 
     let inviteContext = null;
     if (isGroupInvite && item.context) {
@@ -130,9 +148,15 @@ export default function NotificationsScreen({ navigation }) {
       try { friendContext = JSON.parse(item.context); } catch {}
     }
 
-    const hasGroupActions  = inviteContext?.group_id && inviteContext?.invitation_id && !responses[item.id];
-    const hasFriendActions = friendContext?.friendship_id && !responses[item.id];
-    const hasActions = hasGroupActions || hasFriendActions;
+    let ownershipContext = null;
+    if (isOwnershipInvite && item.context) {
+      try { ownershipContext = JSON.parse(item.context); } catch {}
+    }
+
+    const hasGroupActions    = inviteContext?.group_id && inviteContext?.invitation_id && !responses[item.id];
+    const hasFriendActions   = friendContext?.friendship_id && !responses[item.id];
+    const hasOwnershipActions = ownershipContext?.invite_id && ownershipContext?.group_id && !responses[item.id];
+    const hasActions = hasGroupActions || hasFriendActions || hasOwnershipActions;
     const response = responses[item.id];
 
     return (
@@ -174,6 +198,22 @@ export default function NotificationsScreen({ navigation }) {
               <TouchableOpacity
                 style={styles.declineBtn}
                 onPress={() => handleFriendRequestResponse(item, friendContext, false)}
+              >
+                <Text style={styles.declineBtnText}>Decline</Text>
+              </TouchableOpacity>
+            </View>
+          )}
+          {hasOwnershipActions && (
+            <View style={styles.inviteActions}>
+              <TouchableOpacity
+                style={styles.acceptBtn}
+                onPress={() => handleOwnershipInviteResponse(item, ownershipContext, true)}
+              >
+                <Text style={styles.acceptBtnText}>Accept</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={styles.declineBtn}
+                onPress={() => handleOwnershipInviteResponse(item, ownershipContext, false)}
               >
                 <Text style={styles.declineBtnText}>Decline</Text>
               </TouchableOpacity>

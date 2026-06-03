@@ -86,6 +86,8 @@ export default function GroupDetailScreen({ route, navigation }) {
   const [loadingFriends, setLoadingFriends] = useState(false);
   const [watchlistFilter, setWatchlistFilter] = useState('all');
   const [inviting, setInviting] = useState(null);
+  const [transferPickerVisible, setTransferPickerVisible] = useState(false);
+  const [transferring, setTransferring] = useState(null);
 
   const loadGroup = useCallback(async () => {
     try {
@@ -149,6 +151,54 @@ export default function GroupDetailScreen({ route, navigation }) {
     } finally {
       setInviting(null);
     }
+  };
+
+  const handleSendOwnershipInvite = (member) => {
+    Alert.alert(
+      'Transfer Ownership',
+      `Invite ${member.name} to become the owner of "${group.name}"? Ownership only transfers if they accept. You will remain in the group as a regular member.`,
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Send Invite',
+          onPress: async () => {
+            setTransferring(member.id);
+            try {
+              await edgeFn.post(`group-ownership-invites/${groupId}`, { invitee_id: member.id });
+              setTransferPickerVisible(false);
+              await loadGroup();
+            } catch (err) {
+              const msg = err.response?.data?.error || 'Could not send ownership invite';
+              Alert.alert('Error', msg);
+            } finally {
+              setTransferring(null);
+            }
+          },
+        },
+      ]
+    );
+  };
+
+  const handleCancelOwnershipInvite = () => {
+    Alert.alert(
+      'Cancel Invite',
+      'Cancel the ownership transfer invite?',
+      [
+        { text: 'Keep', style: 'cancel' },
+        {
+          text: 'Cancel Invite',
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              await edgeFn.delete(`group-ownership-invites/${groupId}`);
+              await loadGroup();
+            } catch {
+              Alert.alert('Error', 'Could not cancel invite');
+            }
+          },
+        },
+      ]
+    );
   };
 
   const handleInvitationResponse = async (invitationId, approved) => {
@@ -244,6 +294,25 @@ export default function GroupDetailScreen({ route, navigation }) {
         </View>
       )}
 
+      {/* Creator: pending ownership transfer invite */}
+      {group.is_creator && group.pending_ownership_invite && (
+        <View style={styles.ownershipInvitePill}>
+          <Text style={styles.ownershipInviteText}>
+            Ownership invite sent to {group.pending_ownership_invite.invitee.name} — awaiting response
+          </Text>
+          <TouchableOpacity onPress={handleCancelOwnershipInvite}>
+            <Text style={styles.cancelInviteLink}>Cancel Invite</Text>
+          </TouchableOpacity>
+        </View>
+      )}
+
+      {/* Creator: transfer ownership button (only when other members exist and no pending invite) */}
+      {group.is_creator && !group.pending_ownership_invite && group.members.length > 1 && (
+        <TouchableOpacity style={styles.transferBtn} onPress={() => setTransferPickerVisible(true)}>
+          <Text style={styles.transferBtnText}>Transfer Ownership</Text>
+        </TouchableOpacity>
+      )}
+
       {/* Watchlist — primary content */}
       <View style={styles.section}>
         <View style={styles.watchlistHeader}>
@@ -313,6 +382,40 @@ export default function GroupDetailScreen({ route, navigation }) {
                 {renaming ? <ActivityIndicator color="#fff" size="small" /> : <Text style={styles.modalConfirmText}>Save</Text>}
               </TouchableOpacity>
             </View>
+          </View>
+        </TouchableOpacity>
+      </Modal>
+
+      {/* Transfer ownership picker modal */}
+      <Modal visible={transferPickerVisible} transparent animationType="fade">
+        <TouchableOpacity style={styles.modalOverlay} activeOpacity={1} onPress={() => setTransferPickerVisible(false)}>
+          <View style={[styles.modalBox, { maxHeight: '70%' }]}>
+            <Text style={styles.modalTitle}>Transfer Ownership</Text>
+            <Text style={styles.transferPickerSubtitle}>Select a member to invite as the new owner.</Text>
+            <FlatList
+              data={group.members.filter(m => m.id !== group.creator_id)}
+              keyExtractor={m => String(m.id)}
+              renderItem={({ item: m }) => (
+                <View style={styles.friendRow}>
+                  <View>
+                    <Text style={styles.friendName}>{m.name}</Text>
+                    <Text style={styles.friendUsername}>@{m.username}</Text>
+                  </View>
+                  <TouchableOpacity
+                    style={[styles.modalBtn, styles.modalConfirmBtn, { flex: 0, paddingHorizontal: 16 }]}
+                    onPress={() => handleSendOwnershipInvite(m)}
+                    disabled={transferring === m.id}
+                  >
+                    {transferring === m.id
+                      ? <ActivityIndicator color="#fff" size="small" />
+                      : <Text style={styles.modalConfirmText}>Select</Text>}
+                  </TouchableOpacity>
+                </View>
+              )}
+            />
+            <TouchableOpacity style={[styles.modalBtn, styles.modalCancelBtn, { marginTop: 12 }]} onPress={() => setTransferPickerVisible(false)}>
+              <Text style={styles.modalCancelText}>Close</Text>
+            </TouchableOpacity>
           </View>
         </TouchableOpacity>
       </Modal>
@@ -402,6 +505,12 @@ const styles = StyleSheet.create({
   rejectBtnText: { color: '#aaa', fontWeight: '600' },
   leaveBtn: { marginTop: 8, marginBottom: 32, marginHorizontal: 16, borderRadius: 12, padding: 15, alignItems: 'center', borderWidth: 1, borderColor: '#e94560' },
   leaveBtnText: { color: '#e94560', fontWeight: '600', fontSize: 15 },
+  transferBtn: { marginHorizontal: 16, marginBottom: 12, borderRadius: 12, padding: 13, alignItems: 'center', borderWidth: 1, borderColor: '#888' },
+  transferBtnText: { color: '#888', fontWeight: '600', fontSize: 14 },
+  ownershipInvitePill: { marginHorizontal: 16, marginBottom: 12, backgroundColor: '#0f3460', borderRadius: 10, paddingHorizontal: 14, paddingVertical: 10, gap: 6 },
+  ownershipInviteText: { color: '#aaa', fontSize: 13 },
+  cancelInviteLink: { color: '#e94560', fontSize: 13, fontWeight: '600' },
+  transferPickerSubtitle: { color: '#888', fontSize: 13, marginBottom: 12 },
   emptyText: { color: '#888', fontSize: 14, textAlign: 'center', paddingVertical: 8 },
   watchCard: { backgroundColor: '#1a1a2e', borderRadius: 12, marginBottom: 12, borderWidth: 1, borderColor: '#0f3460', overflow: 'hidden' },
   watchCardTop: { flexDirection: 'row', padding: 10, gap: 10 },
