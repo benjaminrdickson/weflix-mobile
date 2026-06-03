@@ -23,12 +23,16 @@ export default function SignupScreen({ navigation }) {
       Alert.alert('Error', 'Passwords do not match');
       return;
     }
+    const name     = form.name.trim();
+    const username = form.username.trim();
+    const email    = form.email.trim();
+
     setLoading(true);
     try {
       const { error } = await supabase.auth.signUp({
-        email:    form.email,
+        email:    email,
         password: form.password,
-        options:  { data: { name: form.name, username: form.username } },
+        options:  { data: { name, username } },
       });
       if (error) throw error;
 
