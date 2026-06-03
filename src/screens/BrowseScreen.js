@@ -39,6 +39,9 @@ export default function BrowseScreen() {
   const activeRequest = useRef(null);
   const loadingRef = useRef(false);
   const hasInitialized = useRef(false);
+  const isMounted = useRef(true);
+
+  useEffect(() => { return () => { isMounted.current = false; }; }, []);
 
   // Load groups list on focus
   useFocusEffect(
@@ -108,6 +111,7 @@ export default function BrowseScreen() {
       if (incoming.length > 0) AsyncStorage.setItem(`browse_last_page_${browseContext}`, String(targetPage));
     } catch {
       if (activeRequest.current !== requestId) return;
+      if (!isMounted.current) return;
       Alert.alert('Error', 'Could not load content. Please try again.');
     } finally {
       if (activeRequest.current === requestId) {

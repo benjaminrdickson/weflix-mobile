@@ -4,10 +4,8 @@ import {
   StyleSheet, Alert, ActivityIndicator, ScrollView, KeyboardAvoidingView, Platform,
 } from 'react-native';
 import { supabase } from '../lib/supabase';
-import { useAuth } from '../context/AuthContext';
 
 export default function SignupScreen({ navigation }) {
-  const { setSigningUp } = useAuth();
   const [form, setForm] = useState({
     name: '', username: '', email: '',
     password: '', password_confirmation: '',
@@ -29,7 +27,6 @@ export default function SignupScreen({ navigation }) {
     const username = form.username.trim();
     const email    = form.email.trim();
 
-    setSigningUp(true);
     setLoading(true);
     try {
       const { error } = await supabase.auth.signUp({
@@ -47,7 +44,6 @@ export default function SignupScreen({ navigation }) {
     } catch (err) {
       Alert.alert('Signup Failed', err.message || 'Something went wrong');
     } finally {
-      setSigningUp(false);
       setLoading(false);
     }
   };
