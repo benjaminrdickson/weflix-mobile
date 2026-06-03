@@ -34,6 +34,7 @@ function MemberAvatar({ user, size = 44 }) {
 }
 
 function WatchlistCard({ item, onRemove }) {
+  const [expanded, setExpanded] = useState(false);
   const hasProviders = item.watch_providers?.flatrate?.length || item.watch_providers?.rent?.length || item.watch_providers?.buy?.length;
 
   return (
@@ -50,7 +51,12 @@ function WatchlistCard({ item, onRemove }) {
           </View>
           <Text style={styles.watchTitle} numberOfLines={2}>{item.title}</Text>
           <Text style={styles.watchYear}>{item.release_date?.slice(0, 4)}</Text>
-          <Text style={styles.watchOverview} numberOfLines={2}>{item.overview}</Text>
+          <Text style={styles.watchOverview} numberOfLines={expanded ? undefined : 2}>{item.overview}</Text>
+          {item.overview?.length > 0 && (
+            <TouchableOpacity onPress={() => setExpanded(e => !e)}>
+              <Text style={styles.overviewToggle}>{expanded ? 'less' : 'more'}</Text>
+            </TouchableOpacity>
+          )}
         </View>
       </View>
       {hasProviders ? (
@@ -521,7 +527,8 @@ const styles = StyleSheet.create({
   typeBadgeText: { color: '#aaa', fontSize: 11 },
   watchTitle: { color: '#fff', fontSize: 15, fontWeight: 'bold', marginBottom: 3 },
   watchYear: { color: '#888', fontSize: 12, marginBottom: 4 },
-  watchOverview: { color: '#999', fontSize: 12, lineHeight: 17 },
+  watchOverview: { color: '#999', fontSize: 12, lineHeight: 17, marginBottom: 2 },
+  overviewToggle: { color: '#e94560', fontSize: 11, fontWeight: '600', marginBottom: 4 },
   providersRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 6, paddingHorizontal: 10, paddingBottom: 8 },
   providerChip: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#0f3460', borderRadius: 6, padding: 4, gap: 4 },
   providerLogo: { width: 18, height: 18, borderRadius: 3 },

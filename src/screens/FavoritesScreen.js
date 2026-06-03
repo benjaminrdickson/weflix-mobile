@@ -63,6 +63,7 @@ function ProviderRow({ label, providers }) {
 }
 
 function FavoriteCard({ item, onRemove }) {
+  const [expanded, setExpanded] = useState(false);
 
   const hasProviders =
     item.watch_providers?.flatrate?.length ||
@@ -84,7 +85,12 @@ function FavoriteCard({ item, onRemove }) {
           <Text style={styles.cardTitle} numberOfLines={2}>{item.title}</Text>
           {item.genre ? <Text style={styles.cardGenre}>{item.genre}</Text> : null}
           <Text style={styles.cardYear}>{item.release_date?.slice(0, 4)}</Text>
-          <Text style={styles.cardOverview} numberOfLines={3}>{item.overview}</Text>
+          <Text style={styles.cardOverview} numberOfLines={expanded ? undefined : 3}>{item.overview}</Text>
+          {item.overview?.length > 0 && (
+            <TouchableOpacity onPress={() => setExpanded(e => !e)}>
+              <Text style={styles.overviewToggle}>{expanded ? 'less' : 'more'}</Text>
+            </TouchableOpacity>
+          )}
           <TouchableOpacity onPress={() => openTrailer(item.videos)}>
             <Text style={styles.trailerLink}>▶ Trailer</Text>
           </TouchableOpacity>
@@ -282,7 +288,8 @@ const styles = StyleSheet.create({
   cardTitle: { color: '#fff', fontSize: 16, fontWeight: 'bold', marginBottom: 4 },
   cardGenre: { color: '#e94560', fontSize: 12, marginBottom: 2 },
   cardYear: { color: '#888', fontSize: 12, marginBottom: 6 },
-  cardOverview: { color: '#ccc', fontSize: 13, lineHeight: 18, marginBottom: 8 },
+  cardOverview: { color: '#ccc', fontSize: 13, lineHeight: 18, marginBottom: 4 },
+  overviewToggle: { color: '#e94560', fontSize: 12, fontWeight: '600', marginBottom: 8 },
   trailerLink: { color: '#e94560', fontSize: 13, fontWeight: '600' },
   providersSection: { paddingHorizontal: 12, paddingBottom: 12 },
   providerRow: { marginBottom: 6 },
