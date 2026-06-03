@@ -69,6 +69,7 @@ function PermissionExplainerModal({ visible, onAllow, onSkip }) {
 function App() {
   const [session, setSession] = useState(undefined); // undefined = loading, null = logged out
   const [showPermissionModal, setShowPermissionModal] = useState(false);
+  const [signingUp, setSigningUp] = useState(false);
 
   useEffect(() => {
     // Get initial session
@@ -119,8 +120,8 @@ function App() {
     await supabase.auth.signOut();
   };
 
-  // Still loading initial session
-  if (session === undefined) {
+  // Still loading initial session, or signup in progress (prevents MainNavigator flash)
+  if (session === undefined || signingUp) {
     return (
       <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#1a1a2e' }}>
         <ActivityIndicator size="large" color="#e94560" />
@@ -129,7 +130,7 @@ function App() {
   }
 
   return (
-    <AuthContext.Provider value={{ session, user: session?.user ?? null, logout }}>
+    <AuthContext.Provider value={{ session, user: session?.user ?? null, logout, setSigningUp }}>
       <NotificationProvider isAuthenticated={!!session}>
         <NavigationContainer>
           {session ? <MainNavigator /> : <AuthNavigator />}
