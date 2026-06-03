@@ -26,6 +26,7 @@ const TYPE_ICON = {
   group_invitation_approved:   '✅',
   group_watchlist_match:       '🎉',
   group_join_request:          '📋',
+  group_ownership_transfer:    '👑',
 };
 
 const TAPPABLE_TYPES = ['partner_watchlist_match', 'group_watchlist_match', 'group_join_request'];
@@ -100,16 +101,38 @@ export default function NotificationsScreen({ navigation }) {
     }
   };
 
+  const handleFriendRequestResponse = async (item, friendContext, accepted) => {
+    try {
+      if (accepted) {
+        await edgeFn.patch(`friendships/${friendContext.friendship_id}`);
+      } else {
+        await edgeFn.delete(`friendships/${friendContext.friendship_id}`);
+      }
+      setResponses(prev => ({ ...prev, [item.id]: accepted ? 'accepted' : 'declined' }));
+    } catch (err) {
+      const msg = err.response?.data?.error || 'Could not respond to request';
+      Alert.alert('Error', msg);
+    }
+  };
+
   const renderItem = ({ item }) => {
     const tappable = TAPPABLE_TYPES.includes(item.notification_type);
-    const isGroupInvite = item.notification_type === 'group_invitation';
+    const isGroupInvite  = item.notification_type === 'group_invitation';
+    const isFriendRequest = item.notification_type === 'friend_request';
 
     let inviteContext = null;
     if (isGroupInvite && item.context) {
       try { inviteContext = JSON.parse(item.context); } catch {}
     }
 
-    const hasActions = inviteContext?.group_id && inviteContext?.invitation_id && !responses[item.id];
+    let friendContext = null;
+    if (isFriendRequest && item.context) {
+      try { friendContext = JSON.parse(item.context); } catch {}
+    }
+
+    const hasGroupActions  = inviteContext?.group_id && inviteContext?.invitation_id && !responses[item.id];
+    const hasFriendActions = friendContext?.friendship_id && !responses[item.id];
+    const hasActions = hasGroupActions || hasFriendActions;
     const response = responses[item.id];
 
     return (
@@ -124,7 +147,7 @@ export default function NotificationsScreen({ navigation }) {
             {item.message}
           </Text>
           <Text style={styles.itemTime}>{timeAgo(item.created_at)}</Text>
-          {hasActions && (
+          {hasGroupActions && (
             <View style={styles.inviteActions}>
               <TouchableOpacity
                 style={styles.acceptBtn}
@@ -140,9 +163,25 @@ export default function NotificationsScreen({ navigation }) {
               </TouchableOpacity>
             </View>
           )}
+          {hasFriendActions && (
+            <View style={styles.inviteActions}>
+              <TouchableOpacity
+                style={styles.acceptBtn}
+                onPress={() => handleFriendRequestResponse(item, friendContext, true)}
+              >
+                <Text style={styles.acceptBtnText}>Accept</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={styles.declineBtn}
+                onPress={() => handleFriendRequestResponse(item, friendContext, false)}
+              >
+                <Text style={styles.declineBtnText}>Decline</Text>
+              </TouchableOpacity>
+            </View>
+          )}
           {response && (
             <Text style={[styles.responseText, response === 'accepted' ? styles.responseAccepted : styles.responseDeclined]}>
-              {response === 'accepted' ? 'You accepted this invite' : 'You declined this invite'}
+              {response === 'accepted' ? 'You accepted' : 'You declined'}
             </Text>
           )}
         </View>

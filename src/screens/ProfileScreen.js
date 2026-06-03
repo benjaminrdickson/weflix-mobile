@@ -272,6 +272,42 @@ export default function ProfileScreen() {
     ]);
   };
 
+  const handleDeleteAccount = () => {
+    Alert.alert(
+      'Delete Account',
+      'This is permanent and cannot be undone. All your data — likes, passes, friendships, groups, and watchlists — will be deleted.',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Delete My Account',
+          style: 'destructive',
+          onPress: () => {
+            Alert.alert(
+              'Are you sure?',
+              'Type "delete" to confirm. This cannot be undone.',
+              [
+                { text: 'Cancel', style: 'cancel' },
+                {
+                  text: 'Yes, delete it',
+                  style: 'destructive',
+                  onPress: async () => {
+                    try {
+                      const { data: { user: authUser } } = await supabase.auth.getUser();
+                      await edgeFn.delete(`users/${authUser.id}`);
+                      await supabase.auth.signOut({ scope: 'local' });
+                    } catch {
+                      Alert.alert('Error', 'Could not delete account. Please try again.');
+                    }
+                  },
+                },
+              ]
+            );
+          },
+        },
+      ]
+    );
+  };
+
   if (!user) {
     return (
       <View style={styles.centered}>
@@ -449,16 +485,12 @@ export default function ProfileScreen() {
           <>
             <Text style={styles.friendSubtitle}>Pending Requests</Text>
             {pendingRequests.map((req) => (
-              <FriendCard key={req.friendship_id} user={req}>
-                <View style={styles.row}>
-                  <TouchableOpacity style={[styles.btn, styles.acceptBtn]} onPress={() => acceptFriendRequest(req.friendship_id)}>
-                    <Text style={styles.saveBtnText}>Accept</Text>
-                  </TouchableOpacity>
-                  <TouchableOpacity style={[styles.btn, styles.cancelBtn]} onPress={() => removeFriendship(req.friendship_id)}>
-                    <Text style={styles.cancelBtnText}>Decline</Text>
-                  </TouchableOpacity>
-                </View>
-              </FriendCard>
+              <PendingRequestCard
+                key={req.friendship_id}
+                user={req}
+                onAccept={() => acceptFriendRequest(req.friendship_id)}
+                onDecline={() => removeFriendship(req.friendship_id)}
+              />
             ))}
           </>
         )}
@@ -525,6 +557,11 @@ export default function ProfileScreen() {
       <TouchableOpacity style={styles.logoutBtn} onPress={logout}>
         <Text style={styles.logoutText}>Log Out</Text>
       </TouchableOpacity>
+
+      {/* Delete account */}
+      <TouchableOpacity style={styles.deleteBtn} onPress={handleDeleteAccount}>
+        <Text style={styles.deleteText}>Delete Account</Text>
+      </TouchableOpacity>
     </ScrollView>
   );
 }
@@ -557,6 +594,39 @@ function PartnerCard({ partner }) {
       <View>
         <Text style={styles.partnerName}>{partner.name}</Text>
         <Text style={styles.partnerUsername}>@{partner.username}</Text>
+      </View>
+    </View>
+  );
+}
+
+function PendingRequestCard({ user, onAccept, onDecline }) {
+  const [imgError, setImgError] = React.useState(false);
+  return (
+    <View style={styles.pendingCard}>
+      <View style={styles.friendCardLeft}>
+        {user.image_url && !imgError ? (
+          <Image
+            source={{ uri: user.image_url, cache: 'reload' }}
+            style={styles.friendAvatar}
+            onError={() => setImgError(true)}
+          />
+        ) : (
+          <View style={[styles.friendAvatar, styles.avatarFallback]}>
+            <Text style={styles.avatarInitial}>{user.name?.[0]?.toUpperCase() || '?'}</Text>
+          </View>
+        )}
+        <View>
+          <Text style={styles.partnerName}>{user.name}</Text>
+          <Text style={styles.partnerUsername}>@{user.username}</Text>
+        </View>
+      </View>
+      <View style={styles.pendingActions}>
+        <TouchableOpacity style={[styles.btn, styles.acceptBtn]} onPress={onAccept}>
+          <Text style={styles.saveBtnText}>Accept</Text>
+        </TouchableOpacity>
+        <TouchableOpacity style={[styles.btn, styles.cancelBtn]} onPress={onDecline}>
+          <Text style={styles.cancelBtnText}>Decline</Text>
+        </TouchableOpacity>
       </View>
     </View>
   );
@@ -679,8 +749,12 @@ const styles = StyleSheet.create({
   partnerUsername: { color: '#888', fontSize: 13 },
   endBtn: { borderWidth: 1, borderColor: '#e94560', borderRadius: 10, padding: 12, alignItems: 'center', marginTop: 4 },
   endBtnText: { color: '#e94560', fontWeight: '600' },
-  logoutBtn: { marginHorizontal: 16, backgroundColor: '#16213e', borderRadius: 12, padding: 16, alignItems: 'center', borderWidth: 1, borderColor: '#e94560' },
+  logoutBtn: { marginHorizontal: 16, marginBottom: 12, backgroundColor: '#16213e', borderRadius: 12, padding: 16, alignItems: 'center', borderWidth: 1, borderColor: '#e94560' },
   logoutText: { color: '#e94560', fontSize: 16, fontWeight: 'bold' },
+  deleteBtn: { marginHorizontal: 16, marginBottom: 32, borderRadius: 12, padding: 16, alignItems: 'center', borderWidth: 1, borderColor: '#555' },
+  deleteText: { color: '#888', fontSize: 15, fontWeight: '600' },
+  pendingCard: { paddingVertical: 10, borderBottomWidth: 1, borderBottomColor: '#0f3460' },
+  pendingActions: { flexDirection: 'row', gap: 10, marginTop: 8 },
   friendSubtitle: { color: '#888', fontSize: 13, fontWeight: '600', marginTop: 12, marginBottom: 6, textTransform: 'uppercase', letterSpacing: 0.5 },
   friendCard: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingVertical: 8, borderBottomWidth: 1, borderBottomColor: '#0f3460' },
   friendCardLeft: { flexDirection: 'row', alignItems: 'center', gap: 10, flex: 1 },
