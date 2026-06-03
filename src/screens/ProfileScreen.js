@@ -7,7 +7,8 @@ import {
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as ImagePicker from 'expo-image-picker';
 import * as Notifications from 'expo-notifications';
-import api from '../services/api';
+import { edgeFn } from '../lib/edgeFunctions';
+import { supabase } from '../lib/supabase';
 import { useAuth } from '../context/AuthContext';
 
 export default function ProfileScreen() {
@@ -35,8 +36,9 @@ export default function ProfileScreen() {
 
   const loadUser = useCallback(async () => {
     try {
-      const username = await AsyncStorage.getItem('username');
-      const { data } = await api.get(`/users/${username}`);
+      const { data: { user: authUser } } = await supabase.auth.getUser();
+      const username = authUser.user_metadata.username;
+      const { data } = await edgeFn.get(`users/${username}`);
       setUser(data);
       setAvatarError(false);
       setForm({ name: data.name, username: data.username, email: data.email });
@@ -47,7 +49,7 @@ export default function ProfileScreen() {
 
   const loadFriends = useCallback(async () => {
     try {
-      const { data } = await api.get('/friendships');
+      const { data } = await edgeFn.get('friendships');
       setFriends(data.friends);
       setPendingRequests(data.pending_requests);
     } catch {}
@@ -55,7 +57,7 @@ export default function ProfileScreen() {
 
   const loadNotifPrefs = useCallback(async () => {
     try {
-      const { data } = await api.get('/notification_preferences');
+      const { data } = await edgeFn.get('notifications/preferences');
       setNotifPrefs(data);
     } catch {}
     try {
@@ -78,10 +80,10 @@ export default function ProfileScreen() {
   const handleSave = async () => {
     setSaving(true);
     try {
-      const userId = await AsyncStorage.getItem('user_id');
-      await api.patch(`/users/${userId}`, form);
+      const { data: { user: authUser } } = await supabase.auth.getUser();
+      await edgeFn.patch(`users/${authUser.id}`, form);
       if (form.username !== user.username) {
-        await AsyncStorage.setItem('username', form.username);
+        await supabase.auth.updateUser({ data: { username: form.username } });
       }
       await loadUser();
       setEditing(false);
@@ -109,19 +111,27 @@ export default function ProfileScreen() {
       if (result.canceled) return;
 
       setUploadingPhoto(true);
-      const userId = await AsyncStorage.getItem('user_id');
+      const { data: { user: authUser } } = await supabase.auth.getUser();
       const uri = result.assets[0].uri;
       const filename = uri.split('/').pop();
       const match = /\.(\w+)$/.exec(filename);
-      const type = match ? `image/${match[1]}` : 'image/jpeg';
+      const ext = match ? match[1] : 'jpg';
+      const contentType = match ? `image/${ext}` : 'image/jpeg';
+      const storagePath = `${authUser.id}/avatar.${ext}`;
 
-      const formData = new FormData();
-      formData.append('profile_picture', { uri, name: filename, type });
+      const fileRes = await fetch(uri);
+      const blob = await fileRes.blob();
 
-      const { data } = await api.post(`/users/${userId}/profile_picture`, formData, {
-        headers: { 'Content-Type': 'multipart/form-data' },
-      });
-      setUser(prev => ({ ...prev, image_url: data.image_url }));
+      const { error: uploadError } = await supabase.storage
+        .from('avatars')
+        .upload(storagePath, blob, { upsert: true, contentType });
+
+      if (uploadError) throw uploadError;
+
+      const { data: { publicUrl } } = supabase.storage.from('avatars').getPublicUrl(storagePath);
+
+      await edgeFn.patch(`users/${authUser.id}`, { image_url: publicUrl });
+      setUser(prev => ({ ...prev, image_url: publicUrl }));
       setAvatarError(false);
     } catch (err) {
       Alert.alert('Error', err?.message || 'Could not upload photo. Please try again.');
@@ -135,7 +145,7 @@ export default function ProfileScreen() {
     setSearching(true);
     setFoundUser(null);
     try {
-      const { data } = await api.get(`/users/${partnerQuery.trim()}`);
+      const { data } = await edgeFn.get(`users/${partnerQuery.trim()}`);
       setFoundUser(data);
     } catch {
       Alert.alert('Not found', 'No user found with that username');
@@ -148,7 +158,7 @@ export default function ProfileScreen() {
     if (!foundUser) return;
     setRelationshipLoading(true);
     try {
-      await api.post('/relationships', { recipient_id: foundUser.id });
+      await edgeFn.post('relationships', { recipient_id: foundUser.id });
       Alert.alert('Request sent!', `A relationship request was sent to ${foundUser.username}`);
       setFoundUser(null);
       setPartnerQuery('');
@@ -165,7 +175,7 @@ export default function ProfileScreen() {
     if (!relId) return;
     setRelationshipLoading(true);
     try {
-      await api.patch(`/relationships/${relId}`, { confirmed: true });
+      await edgeFn.patch(`relationships/${relId}`);
       await loadUser();
     } catch {
       Alert.alert('Error', 'Could not accept request');
@@ -179,7 +189,7 @@ export default function ProfileScreen() {
     setSearchingFriend(true);
     setFoundFriend(null);
     try {
-      const { data } = await api.get(`/users/${friendQuery.trim()}`);
+      const { data } = await edgeFn.get(`users/${friendQuery.trim()}`);
       setFoundFriend(data);
     } catch {
       Alert.alert('Not found', 'No user found with that username');
@@ -192,7 +202,7 @@ export default function ProfileScreen() {
     if (!foundFriend) return;
     setFriendsLoading(true);
     try {
-      await api.post('/friendships', { username: foundFriend.username });
+      await edgeFn.post('friendships', { username: foundFriend.username });
       Alert.alert('Request sent!', `Friend request sent to ${foundFriend.username}`);
       setFoundFriend(null);
       setFriendQuery('');
@@ -208,7 +218,7 @@ export default function ProfileScreen() {
   const acceptFriendRequest = async (friendshipId) => {
     setFriendsLoading(true);
     try {
-      await api.patch(`/friendships/${friendshipId}`);
+      await edgeFn.patch(`friendships/${friendshipId}`);
       await loadFriends();
     } catch {
       Alert.alert('Error', 'Could not accept friend request');
@@ -220,7 +230,7 @@ export default function ProfileScreen() {
   const removeFriendship = async (friendshipId) => {
     setFriendsLoading(true);
     try {
-      await api.delete(`/friendships/${friendshipId}`);
+      await edgeFn.delete(`friendships/${friendshipId}`);
       await loadFriends();
     } catch {
       Alert.alert('Error', 'Could not remove');
@@ -233,7 +243,7 @@ export default function ProfileScreen() {
     const updated = { ...notifPrefs, [key]: !notifPrefs[key] };
     setNotifPrefs(updated);
     try {
-      await api.patch('/notification_preferences', { [key]: !notifPrefs[key] });
+      await edgeFn.patch('notifications/preferences', { [key]: !notifPrefs[key] });
     } catch {
       setNotifPrefs(notifPrefs);
     }
@@ -250,7 +260,7 @@ export default function ProfileScreen() {
         onPress: async () => {
           setRelationshipLoading(true);
           try {
-            await api.delete(`/relationships/${relId}`);
+            await edgeFn.delete(`relationships/${relId}`);
             await loadUser();
           } catch {
             Alert.alert('Error', 'Could not end relationship');

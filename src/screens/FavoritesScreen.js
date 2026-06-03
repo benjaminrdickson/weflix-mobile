@@ -5,9 +5,9 @@ import {
   StyleSheet, ActivityIndicator, Alert, RefreshControl,
 } from 'react-native';
 import { openTrailer } from '../components/TrailerModal';
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as Localization from 'expo-localization';
-import api from '../services/api';
+import { edgeFn } from '../lib/edgeFunctions';
+import { supabase } from '../lib/supabase';
 
 const TMDB_IMAGE_BASE = 'https://image.tmdb.org/t/p/w500';
 const TMDB_LOGO_BASE = 'https://image.tmdb.org/t/p/w92';
@@ -124,10 +124,11 @@ export default function FavoritesScreen() {
 
   const loadData = useCallback(async () => {
     try {
-      const username = await AsyncStorage.getItem('username');
+      const { data: { user: authUser } } = await supabase.auth.getUser();
+      const username = authUser.user_metadata.username;
       const [userRes, favRes] = await Promise.all([
-        api.get(`/users/${username}`),
-        api.get('/favorites', { params: { region } }),
+        edgeFn.get(`users/${username}`),
+        edgeFn.get('favorites', { region }),
       ]);
       setCurrentUser(userRes.data);
       setPartner(userRes.data.relationship?.partner || null);
@@ -148,7 +149,7 @@ export default function FavoritesScreen() {
 
   const handleRemove = async (favoriteId) => {
     try {
-      await api.delete(`/favorites/${favoriteId}`);
+      await edgeFn.delete(`favorites/${favoriteId}`);
       setFavorites((prev) => prev.filter((f) => f.favorite_id !== favoriteId));
     } catch {
       Alert.alert('Error', 'Could not remove favorite');

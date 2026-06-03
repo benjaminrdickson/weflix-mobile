@@ -5,7 +5,7 @@ import {
   StyleSheet, ActivityIndicator, Alert, TextInput, Modal,
 } from 'react-native';
 import * as Localization from 'expo-localization';
-import api from '../services/api';
+import { edgeFn } from '../lib/edgeFunctions';
 
 const TMDB_IMAGE_BASE = 'https://image.tmdb.org/t/p/w342';
 const TMDB_LOGO_BASE = 'https://image.tmdb.org/t/p/w92';
@@ -89,7 +89,7 @@ export default function GroupDetailScreen({ route, navigation }) {
 
   const loadGroup = useCallback(async () => {
     try {
-      const { data } = await api.get(`/groups/${groupId}`, { params: { region } });
+      const { data } = await edgeFn.get(`groups/${groupId}`, { region });
       setGroup(data);
       navigation.setOptions({ title: data.name });
     } catch {
@@ -110,7 +110,7 @@ export default function GroupDetailScreen({ route, navigation }) {
     if (!name) return;
     setRenaming(true);
     try {
-      await api.patch(`/groups/${groupId}`, { name });
+      await edgeFn.patch(`groups/${groupId}`, { name });
       setGroup(prev => ({ ...prev, name }));
       navigation.setOptions({ title: name });
       setRenameVisible(false);
@@ -126,7 +126,7 @@ export default function GroupDetailScreen({ route, navigation }) {
     setInviteVisible(true);
     setLoadingFriends(true);
     try {
-      const { data } = await api.get('/friendships');
+      const { data } = await edgeFn.get('friendships');
       const memberIds = new Set((group?.members || []).map(m => m.id));
       const pendingIds = new Set((group?.pending_invitations || []).map(inv => inv.invitee.id));
       setFriends(data.friends.filter(f => !memberIds.has(f.id) && !pendingIds.has(f.id)));
@@ -140,7 +140,7 @@ export default function GroupDetailScreen({ route, navigation }) {
   const handleInvite = async (friend) => {
     setInviting(friend.id);
     try {
-      await api.post(`/groups/${groupId}/invitations`, { invitee_id: friend.id });
+      await edgeFn.post(`group-invitations/${groupId}`, { invitee_id: friend.id });
       Alert.alert('Invited!', `${friend.name} has been invited to the group.`);
       setInviteVisible(false);
     } catch (err) {
@@ -153,7 +153,7 @@ export default function GroupDetailScreen({ route, navigation }) {
 
   const handleInvitationResponse = async (invitationId, approved) => {
     try {
-      await api.patch(`/groups/${groupId}/invitations/${invitationId}`, { approved });
+      await edgeFn.patch(`group-invitations/${groupId}/${invitationId}`, { approved });
       await loadGroup();
     } catch {
       Alert.alert('Error', 'Could not update invitation');
@@ -168,7 +168,7 @@ export default function GroupDetailScreen({ route, navigation }) {
         style: 'destructive',
         onPress: async () => {
           try {
-            await api.delete(`/groups/${groupId}/leave`);
+            await edgeFn.delete(`groups/${groupId}/leave`);
             navigation.goBack();
           } catch (err) {
             const msg = err.response?.data?.error || 'Could not leave group';
@@ -181,7 +181,7 @@ export default function GroupDetailScreen({ route, navigation }) {
 
   const handleRemoveWatchlistItem = async (watchlistItemId) => {
     try {
-      await api.delete(`/groups/${groupId}/watchlist/${watchlistItemId}`);
+      await edgeFn.delete(`group-watchlist/${groupId}/${watchlistItemId}`);
       setGroup(prev => ({
         ...prev,
         watchlist: prev.watchlist.filter(w => w.watchlist_item_id !== watchlistItemId),

@@ -3,14 +3,12 @@ import {
   View, Text, TextInput, TouchableOpacity,
   StyleSheet, Alert, ActivityIndicator, KeyboardAvoidingView, Platform,
 } from 'react-native';
-import api from '../services/api';
-import { useAuth } from '../context/AuthContext';
+import { supabase } from '../lib/supabase';
 
 export default function LoginScreen({ navigation }) {
-  const { login } = useAuth();
-  const [email, setEmail] = useState('');
+  const [email, setEmail]       = useState('');
   const [password, setPassword] = useState('');
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading]   = useState(false);
 
   const handleLogin = async () => {
     if (!email.trim() || !password) {
@@ -19,8 +17,9 @@ export default function LoginScreen({ navigation }) {
     }
     setLoading(true);
     try {
-      const { data } = await api.post('/sessions', { email, password });
-      await login(data.jwt, data.user_id, data.username);
+      const { error } = await supabase.auth.signInWithPassword({ email, password });
+      if (error) throw error;
+      // Session detected by onAuthStateChange in App.js — no manual navigation needed
     } catch {
       Alert.alert('Login Failed', 'Invalid email or password');
     } finally {

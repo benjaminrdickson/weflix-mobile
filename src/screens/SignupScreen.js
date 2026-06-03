@@ -3,7 +3,7 @@ import {
   View, Text, TextInput, TouchableOpacity,
   StyleSheet, Alert, ActivityIndicator, ScrollView, KeyboardAvoidingView, Platform,
 } from 'react-native';
-import api from '../services/api';
+import { supabase } from '../lib/supabase';
 
 export default function SignupScreen({ navigation }) {
   const [form, setForm] = useState({
@@ -25,13 +25,20 @@ export default function SignupScreen({ navigation }) {
     }
     setLoading(true);
     try {
-      await api.post('/users', form);
+      const { error } = await supabase.auth.signUp({
+        email:    form.email,
+        password: form.password,
+        options:  { data: { name: form.name, username: form.username } },
+      });
+      if (error) throw error;
+
+      // Sign out immediately so user explicitly logs in (preserves current UX)
+      await supabase.auth.signOut();
       Alert.alert('Account created!', 'You can now log in.', [
         { text: 'OK', onPress: () => navigation.navigate('Login') },
       ]);
     } catch (err) {
-      const messages = err.response?.data?.errors?.join('\n') || 'Something went wrong';
-      Alert.alert('Signup Failed', messages);
+      Alert.alert('Signup Failed', err.message || 'Something went wrong');
     } finally {
       setLoading(false);
     }

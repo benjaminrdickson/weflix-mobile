@@ -6,7 +6,7 @@ import {
   ScrollView, Modal,
 } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import api from '../services/api';
+import { edgeFn } from '../lib/edgeFunctions';
 import DetailModal from '../components/DetailModal';
 
 const TMDB_IMAGE_BASE = 'https://image.tmdb.org/t/p/w342';
@@ -43,13 +43,13 @@ export default function BrowseScreen() {
   // Load groups list on focus
   useFocusEffect(
     useCallback(() => {
-      api.get('/groups').then(({ data }) => setGroups(data)).catch(() => {});
+      edgeFn.get('groups').then(({ data }) => setGroups(data)).catch(() => {});
     }, [])
   );
 
   // Fetch genre list whenever content type changes
   useEffect(() => {
-    api.get('/genres', { params: { content_type: contentType } })
+    edgeFn.get('genres', { content_type: contentType })
       .then(({ data }) => {
         setGenres(data);
         const map = {};
@@ -87,14 +87,12 @@ export default function BrowseScreen() {
     }
 
     try {
-      const { data } = await api.get('/browse', {
-        params: {
-          content_type: contentType,
-          page: targetPage,
-          genre_id: selectedGenre || undefined,
-          query: submittedQuery || undefined,
-          context: browseContext,
-        },
+      const { data } = await edgeFn.get('browse', {
+        content_type: contentType,
+        page:         targetPage,
+        genre_id:     selectedGenre || undefined,
+        query:        submittedQuery || undefined,
+        context:      browseContext,
       });
 
       if (activeRequest.current !== requestId) return;
@@ -134,9 +132,9 @@ export default function BrowseScreen() {
   const handleLike = async (item) => {
     try {
       if (browseContext === 'partner') {
-        await api.post('/likes', { api_movie_id: item.id, content_type: item.content_type });
+        await edgeFn.post('likes', { api_movie_id: item.id, content_type: item.content_type });
       } else {
-        await api.post(`/groups/${browseContext}/likes`, { api_movie_id: item.id, content_type: item.content_type });
+        await edgeFn.post(`group-likes/${browseContext}`, { api_movie_id: item.id, content_type: item.content_type });
       }
     } catch {
       // fail silently
@@ -146,7 +144,7 @@ export default function BrowseScreen() {
 
   const handlePass = async (item) => {
     try {
-      await api.post('/passes', { api_movie_id: item.id, content_type: item.content_type });
+      await edgeFn.post('passes', { api_movie_id: item.id, content_type: item.content_type });
     } catch {
       // fail silently
     }

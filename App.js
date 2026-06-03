@@ -1,6 +1,6 @@
 import { registerRootComponent } from 'expo';
-import React, { useState, useEffect, useRef } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, ActivityIndicator, Alert, Platform } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import { View, Text, TouchableOpacity, StyleSheet, ActivityIndicator, Platform } from 'react-native';
 import { NavigationContainer } from '@react-navigation/native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as Notifications from 'expo-notifications';
@@ -9,7 +9,8 @@ import AuthNavigator from './src/navigation/AuthNavigator';
 import MainNavigator from './src/navigation/MainNavigator';
 import { AuthContext } from './src/context/AuthContext';
 import { NotificationProvider } from './src/context/NotificationContext';
-import api, { setUnauthorizedHandler } from './src/services/api';
+import { supabase } from './src/lib/supabase';
+import { edgeFn } from './src/lib/edgeFunctions';
 
 Notifications.setNotificationHandler({
   handleNotification: async () => ({
@@ -36,9 +37,10 @@ async function registerPushToken() {
   if (finalStatus !== 'granted') return;
 
   try {
-    const tokenData = await Notifications.getExpoPushTokenAsync();
-    const platform = Platform.OS;
-    await api.post('/push_tokens', { token: tokenData.data, platform });
+    const tokenData = await Notifications.getExpoPushTokenAsync({
+      projectId: '7d104701-d7ce-41a6-9410-64b001b9e76a',
+    });
+    await edgeFn.post('push-tokens', { token: tokenData.data, platform: Platform.OS });
   } catch {
     // token registration failure must never break the app
   }
@@ -65,23 +67,25 @@ function PermissionExplainerModal({ visible, onAllow, onSkip }) {
 }
 
 function App() {
-  const [isLoading, setIsLoading] = useState(true);
-  const [userToken, setUserToken] = useState(null);
+  const [session, setSession] = useState(undefined); // undefined = loading, null = logged out
   const [showPermissionModal, setShowPermissionModal] = useState(false);
 
   useEffect(() => {
-    setUnauthorizedHandler(() => setUserToken(null));
-  }, []);
-
-  useEffect(() => {
-    AsyncStorage.getItem('jwt').then((token) => {
-      setUserToken(token);
-      setIsLoading(false);
+    // Get initial session
+    supabase.auth.getSession().then(({ data: { session: s } }) => {
+      setSession(s ?? null);
     });
+
+    // Listen for auth state changes (login/logout)
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, s) => {
+      setSession(s ?? null);
+    });
+
+    return () => subscription.unsubscribe();
   }, []);
 
   useEffect(() => {
-    if (!userToken) return;
+    if (!session) return;
     AsyncStorage.getItem('push_permission_asked').then(async (asked) => {
       if (asked) {
         // Already decided — re-register token silently in case it changed
@@ -89,15 +93,17 @@ function App() {
         const { status } = await Notifications.getPermissionsAsync();
         if (status === 'granted') {
           try {
-            const tokenData = await Notifications.getExpoPushTokenAsync();
-            await api.post('/push_tokens', { token: tokenData.data, platform: Platform.OS });
+            const tokenData = await Notifications.getExpoPushTokenAsync({
+              projectId: '7d104701-d7ce-41a6-9410-64b001b9e76a',
+            });
+            await edgeFn.post('push-tokens', { token: tokenData.data, platform: Platform.OS });
           } catch {}
         }
         return;
       }
       setShowPermissionModal(true);
     });
-  }, [userToken]);
+  }, [session]);
 
   const handleAllowNotifications = async () => {
     setShowPermissionModal(false);
@@ -109,21 +115,12 @@ function App() {
     await AsyncStorage.setItem('push_permission_asked', 'true');
   };
 
-  const login = async (token, userId, username) => {
-    await AsyncStorage.multiSet([
-      ['jwt', token],
-      ['user_id', String(userId)],
-      ['username', username],
-    ]);
-    setUserToken(token);
-  };
-
   const logout = async () => {
-    await AsyncStorage.multiRemove(['jwt', 'user_id', 'username']);
-    setUserToken(null);
+    await supabase.auth.signOut();
   };
 
-  if (isLoading) {
+  // Still loading initial session
+  if (session === undefined) {
     return (
       <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#1a1a2e' }}>
         <ActivityIndicator size="large" color="#e94560" />
@@ -132,10 +129,10 @@ function App() {
   }
 
   return (
-    <AuthContext.Provider value={{ userToken, login, logout }}>
-      <NotificationProvider userToken={userToken}>
+    <AuthContext.Provider value={{ session, user: session?.user ?? null, logout }}>
+      <NotificationProvider isAuthenticated={!!session}>
         <NavigationContainer>
-          {userToken ? <MainNavigator /> : <AuthNavigator />}
+          {session ? <MainNavigator /> : <AuthNavigator />}
         </NavigationContainer>
         <PermissionExplainerModal
           visible={showPermissionModal}

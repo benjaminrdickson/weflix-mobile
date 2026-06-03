@@ -4,7 +4,7 @@ import {
   View, Text, TouchableOpacity, FlatList,
   StyleSheet, ActivityIndicator, Alert, TextInput, Modal,
 } from 'react-native';
-import api from '../services/api';
+import { edgeFn } from '../lib/edgeFunctions';
 
 export default function GroupsScreen({ navigation }) {
   const [groups, setGroups] = useState([]);
@@ -15,7 +15,7 @@ export default function GroupsScreen({ navigation }) {
 
   const loadGroups = useCallback(async () => {
     try {
-      const { data } = await api.get('/groups');
+      const { data } = await edgeFn.get('groups');
       setGroups(data);
     } catch {
       Alert.alert('Error', 'Could not load groups');
@@ -35,7 +35,7 @@ export default function GroupsScreen({ navigation }) {
     if (!name) return;
     setCreating(true);
     try {
-      const { data } = await api.post('/groups', { name });
+      const { data } = await edgeFn.post('groups', { name });
       setGroups(prev => [data, ...prev]);
       setCreateVisible(false);
       setNewGroupName('');

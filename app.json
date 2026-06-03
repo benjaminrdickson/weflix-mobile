@@ -5,15 +5,22 @@
     "version": "1.0.0",
     "orientation": "portrait",
     "userInterfaceStyle": "dark",
+    "icon": "./assets/Weflix-icon.png",
     "ios": {
       "supportsTablet": false,
-      "bundleIdentifier": "com.weflix.app"
+      "bundleIdentifier": "com.weflix.app",
+      "infoPlist": {
+        "ITSAppUsesNonExemptEncryption": false
+      }
     },
     "android": {
       "package": "com.weflix.app",
       "adaptiveIcon": {
         "backgroundColor": "#1a1a2e"
-      }
+      },
+      "permissions": [
+        "android.permission.RECORD_AUDIO"
+      ]
     },
     "plugins": [
       "expo-localization",
@@ -30,6 +37,12 @@
           "color": "#e94560"
         }
       ]
-    ]
+    ],
+    "extra": {
+      "eas": {
+        "projectId": "7d104701-d7ce-41a6-9410-64b001b9e76a"
+      }
+    },
+    "owner": "brdviola"
   }
 }

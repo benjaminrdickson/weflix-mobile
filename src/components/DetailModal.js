@@ -4,7 +4,7 @@ import {
   TouchableOpacity, StyleSheet, ActivityIndicator,
 } from 'react-native';
 import * as WebBrowser from 'expo-web-browser';
-import api from '../services/api';
+import { edgeFn } from '../lib/edgeFunctions';
 
 const TMDB_IMAGE_BASE = 'https://image.tmdb.org/t/p/w500';
 
@@ -18,7 +18,7 @@ export default function DetailModal({ item, genreMap, onLike, onPass, onClose })
     if (!item) return;
     setDetail(null);
     setLoading(true);
-    api.get(`/browse/${item.id}`, { params: { content_type: item.content_type } })
+    edgeFn.get(`browse/${item.id}`, { content_type: item.content_type })
       .then(({ data }) => setDetail(data))
       .catch(() => setDetail(null))
       .finally(() => setLoading(false));

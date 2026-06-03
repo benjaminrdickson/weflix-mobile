@@ -5,7 +5,7 @@ import {
   StyleSheet, ActivityIndicator, Alert,
 } from 'react-native';
 import * as Notifications from 'expo-notifications';
-import api from '../services/api';
+import { edgeFn } from '../lib/edgeFunctions';
 import { useNotifications } from '../context/NotificationContext';
 
 function timeAgo(dateString) {
@@ -38,10 +38,10 @@ export default function NotificationsScreen({ navigation }) {
 
   const loadNotifications = useCallback(async () => {
     try {
-      const { data } = await api.get('/notifications');
+      const { data } = await edgeFn.get('notifications');
       setNotifications(data);
       setResponses({});
-      await api.patch('/notifications/mark_all_read');
+      await edgeFn.patch('notifications/mark_all_read');
       await Notifications.setBadgeCountAsync(0);
       refreshUnread();
     } catch {
@@ -65,7 +65,7 @@ export default function NotificationsScreen({ navigation }) {
         style: 'destructive',
         onPress: async () => {
           try {
-            await api.delete('/notifications/clear_all');
+            await edgeFn.delete('notifications/clear_all');
             setNotifications([]);
             await Notifications.setBadgeCountAsync(0);
             refreshUnread();
@@ -89,8 +89,8 @@ export default function NotificationsScreen({ navigation }) {
 
   const handleGroupInviteResponse = async (item, inviteContext, accepted) => {
     try {
-      await api.patch(
-        `/groups/${inviteContext.group_id}/invitations/${inviteContext.invitation_id}`,
+      await edgeFn.patch(
+        `group-invitations/${inviteContext.group_id}/${inviteContext.invitation_id}`,
         { accepted }
       );
       setResponses(prev => ({ ...prev, [item.id]: accepted ? 'accepted' : 'declined' }));
