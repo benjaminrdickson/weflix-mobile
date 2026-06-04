@@ -5,6 +5,7 @@ import {
   StyleSheet, ActivityIndicator, Alert, TextInput, Modal,
 } from 'react-native';
 import * as Localization from 'expo-localization';
+import { openTrailer } from '../components/TrailerModal';
 import { edgeFn } from '../lib/edgeFunctions';
 
 const TMDB_IMAGE_BASE = 'https://image.tmdb.org/t/p/w342';
@@ -57,6 +58,9 @@ function WatchlistCard({ item, onRemove }) {
               <Text style={styles.overviewToggle}>{expanded ? 'less' : 'more'}</Text>
             </TouchableOpacity>
           )}
+          <TouchableOpacity onPress={() => openTrailer(item.videos)}>
+            <Text style={styles.trailerLink}>▶ Trailer</Text>
+          </TouchableOpacity>
         </View>
       </View>
       {hasProviders ? (
@@ -529,6 +533,7 @@ const styles = StyleSheet.create({
   watchYear: { color: '#888', fontSize: 12, marginBottom: 4 },
   watchOverview: { color: '#999', fontSize: 12, lineHeight: 17, marginBottom: 2 },
   overviewToggle: { color: '#e94560', fontSize: 11, fontWeight: '600', marginBottom: 4 },
+  trailerLink: { color: '#e94560', fontSize: 13, fontWeight: '600' },
   providersRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 6, paddingHorizontal: 10, paddingBottom: 8 },
   providerChip: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#0f3460', borderRadius: 6, padding: 4, gap: 4 },
   providerLogo: { width: 18, height: 18, borderRadius: 3 },
