@@ -6,6 +6,7 @@ import {
   ScrollView, Modal,
 } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import * as Localization from 'expo-localization';
 import { edgeFn } from '../lib/edgeFunctions';
 import DetailModal from '../components/DetailModal';
 
@@ -14,6 +15,19 @@ const CONTENT_TYPES = [
   { key: 'movie', label: 'Movies' },
   { key: 'tv',    label: 'Shows'  },
   { key: 'both',  label: 'Both'   },
+];
+const PLATFORMS = [
+  { id: 8,   label: 'Netflix' },
+  { id: 9,   label: 'Prime' },
+  { id: 337, label: 'Disney+' },
+  { id: 384, label: 'HBO' },
+  { id: 15,  label: 'Hulu' },
+  { id: 350, label: 'Apple TV+' },
+  { id: 386, label: 'Peacock' },
+  { id: 531, label: 'Paramount+' },
+  { id: 37,  label: 'Showtime' },
+  { id: 73,  label: 'Tubi' },
+  { id: 283, label: 'Crunchyroll' },
 ];
 
 export default function BrowseScreen() {
@@ -35,6 +49,7 @@ export default function BrowseScreen() {
   const [groups, setGroups]           = useState([]);
   const [browseContext, setBrowseContext] = useState('partner');
   const [contextPickerVisible, setContextPickerVisible] = useState(false);
+  const [selectedProvider, setSelectedProvider] = useState(null);
 
   const activeRequest = useRef(null);
   const loadingRef = useRef(false);
@@ -43,10 +58,11 @@ export default function BrowseScreen() {
 
   useEffect(() => { return () => { isMounted.current = false; }; }, []);
 
-  // Load groups list on focus
+  // Load groups list on focus; reset platform filter
   useFocusEffect(
     useCallback(() => {
       edgeFn.get('groups').then(({ data }) => setGroups(data)).catch(() => {});
+      setSelectedProvider(null);
     }, [])
   );
 
@@ -75,7 +91,7 @@ export default function BrowseScreen() {
   useEffect(() => {
     if (!hasInitialized.current) return;
     loadPage(1, true);
-  }, [contentType, selectedGenre, submittedQuery, browseContext]);
+  }, [contentType, selectedGenre, submittedQuery, browseContext, selectedProvider]);
 
   const loadPage = useCallback(async (targetPage, reset = false) => {
     const requestId = Date.now();
@@ -91,11 +107,13 @@ export default function BrowseScreen() {
 
     try {
       const { data } = await edgeFn.get('browse', {
-        content_type: contentType,
-        page:         targetPage,
-        genre_id:     selectedGenre || undefined,
-        query:        submittedQuery || undefined,
-        context:      browseContext,
+        content_type:      contentType,
+        page:              targetPage,
+        genre_id:          selectedGenre || undefined,
+        query:             submittedQuery || undefined,
+        context:           browseContext,
+        watch_provider_id: (!submittedQuery && selectedProvider) ? selectedProvider : undefined,
+        region:            Localization.getLocales()[0]?.regionCode || 'US',
       });
 
       if (activeRequest.current !== requestId) return;
@@ -120,7 +138,7 @@ export default function BrowseScreen() {
         loadingRef.current = false;
       }
     }
-  }, [contentType, selectedGenre, submittedQuery, browseContext]);
+  }, [contentType, selectedGenre, submittedQuery, browseContext, selectedProvider]);
 
   const handleEndReached = () => {
     if (loadingRef.current || loadingFirst || exhausted) return;
@@ -255,6 +273,54 @@ export default function BrowseScreen() {
           </TouchableOpacity>
         ))}
       </View>
+
+      {/* Platform filter */}
+      <ScrollView
+        horizontal
+        showsHorizontalScrollIndicator={false}
+        style={styles.platformScroll}
+        contentContainerStyle={styles.platformScrollContent}
+      >
+        <TouchableOpacity
+          style={[styles.platformChip, !selectedProvider && styles.platformChipActive]}
+          onPress={() => setSelectedProvider(null)}
+          disabled={!!submittedQuery}
+        >
+          <Text style={[
+            styles.platformChipText,
+            !selectedProvider && styles.platformChipTextActive,
+            !!submittedQuery && styles.platformChipTextDisabled,
+          ]}>All</Text>
+        </TouchableOpacity>
+        {PLATFORMS.map(p => (
+          <TouchableOpacity
+            key={p.id}
+            style={[
+              styles.platformChip,
+              selectedProvider === p.id && styles.platformChipActive,
+              !!submittedQuery && styles.platformChipDisabled,
+            ]}
+            onPress={() => {
+              if (selectedProvider === p.id) {
+                setSelectedProvider(null);
+              } else {
+                setSelectedProvider(p.id);
+                setSelectedGenre(null);
+              }
+            }}
+            disabled={!!submittedQuery}
+          >
+            <Text style={[
+              styles.platformChipText,
+              selectedProvider === p.id && styles.platformChipTextActive,
+              !!submittedQuery && styles.platformChipTextDisabled,
+            ]}>{p.label}</Text>
+          </TouchableOpacity>
+        ))}
+      </ScrollView>
+      {!!submittedQuery && (
+        <Text style={styles.platformSearchNotice}>Platform filter unavailable during search</Text>
+      )}
 
       {/* Genre chips */}
       {genres.length > 0 && (
@@ -391,6 +457,22 @@ const styles = StyleSheet.create({
   toggleBtnActive: { backgroundColor: '#e94560' },
   toggleText: { color: '#888', fontWeight: '600', fontSize: 14 },
   toggleTextActive: { color: '#fff' },
+  platformScroll: { height: 44, marginBottom: 4 },
+  platformScrollContent: { paddingHorizontal: 16, gap: 8, alignItems: 'center' },
+  platformChip: {
+    paddingHorizontal: 14,
+    paddingVertical: 6,
+    backgroundColor: '#16213e',
+    borderRadius: 20,
+    borderWidth: 1,
+    borderColor: '#0f3460',
+  },
+  platformChipActive: { backgroundColor: '#e94560', borderColor: '#e94560' },
+  platformChipDisabled: { opacity: 0.35 },
+  platformChipText: { color: '#888', fontSize: 13, fontWeight: '500' },
+  platformChipTextActive: { color: '#fff' },
+  platformChipTextDisabled: { color: '#555' },
+  platformSearchNotice: { color: '#555', fontSize: 11, paddingHorizontal: 16, marginBottom: 6, fontStyle: 'italic' },
   genreScroll: { height: 44, marginBottom: 8 },
   genreScrollContent: { paddingHorizontal: 16, gap: 8, alignItems: 'center' },
   genreChip: {
