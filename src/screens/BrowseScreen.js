@@ -26,7 +26,6 @@ const PLATFORMS = [
   { id: 350, label: 'Apple TV+' },
   { id: 386, label: 'Peacock' },
   { id: 531, label: 'Paramount+' },
-  { id: 37,  label: 'Showtime' },
   { id: 73,  label: 'Tubi' },
   { id: 283, label: 'Crunchyroll' },
 ];
@@ -285,6 +284,7 @@ export default function BrowseScreen() {
       </View>
 
       {/* Platform filter */}
+      <Text style={styles.sectionLabel}>Streaming On</Text>
       <ScrollView
         horizontal
         showsHorizontalScrollIndicator={false}
@@ -352,30 +352,33 @@ export default function BrowseScreen() {
 
       {/* Genre chips */}
       {genres.length > 0 && (
-        <ScrollView
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          style={styles.genreScroll}
-          contentContainerStyle={styles.genreScrollContent}
-        >
-          <TouchableOpacity
-            style={[styles.genreChip, !selectedGenre && styles.genreChipActive]}
-            onPress={() => setSelectedGenre(null)}
+        <>
+          <Text style={styles.sectionLabel}>Genre</Text>
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            style={styles.genreScroll}
+            contentContainerStyle={styles.genreScrollContent}
           >
-            <Text style={[styles.genreChipText, !selectedGenre && styles.genreChipTextActive]}>All</Text>
-          </TouchableOpacity>
-          {genres.map(g => (
             <TouchableOpacity
-              key={g.id}
-              style={[styles.genreChip, selectedGenre === g.id && styles.genreChipActive]}
-              onPress={() => setSelectedGenre(selectedGenre === g.id ? null : g.id)}
+              style={[styles.genreChip, !selectedGenre && styles.genreChipActive]}
+              onPress={() => setSelectedGenre(null)}
             >
-              <Text style={[styles.genreChipText, selectedGenre === g.id && styles.genreChipTextActive]}>
-                {g.name}
-              </Text>
+              <Text style={[styles.genreChipText, !selectedGenre && styles.genreChipTextActive]}>All</Text>
             </TouchableOpacity>
-          ))}
-        </ScrollView>
+            {genres.map(g => (
+              <TouchableOpacity
+                key={g.id}
+                style={[styles.genreChip, selectedGenre === g.id && styles.genreChipActive]}
+                onPress={() => setSelectedGenre(selectedGenre === g.id ? null : g.id)}
+              >
+                <Text style={[styles.genreChipText, selectedGenre === g.id && styles.genreChipTextActive]}>
+                  {g.name}
+                </Text>
+              </TouchableOpacity>
+            ))}
+          </ScrollView>
+        </>
       )}
 
       {/* List */}
@@ -476,7 +479,7 @@ const styles = StyleSheet.create({
   toggle: {
     flexDirection: 'row',
     marginHorizontal: 16,
-    marginBottom: 8,
+    marginBottom: 12,
     backgroundColor: '#16213e',
     borderRadius: 12,
     padding: 4,
@@ -485,24 +488,24 @@ const styles = StyleSheet.create({
   toggleBtnActive: { backgroundColor: '#e94560' },
   toggleText: { color: '#888', fontWeight: '600', fontSize: 14 },
   toggleTextActive: { color: '#fff' },
-  platformScroll: { height: 60, marginBottom: 4 },
-  platformScrollContent: { paddingHorizontal: 16, gap: 8, alignItems: 'center' },
+  platformScroll: { height: 88, marginBottom: 8 },
+  platformScrollContent: { paddingHorizontal: 16, gap: 10, alignItems: 'center' },
   platformAllBtn: {
-    width: 48,
-    height: 48,
-    borderRadius: 10,
+    width: 60,
+    height: 60,
+    borderRadius: 20,
     borderWidth: 2,
     borderColor: '#0f3460',
     backgroundColor: '#16213e',
     justifyContent: 'center',
     alignItems: 'center',
   },
-  platformAllText: { color: '#888', fontSize: 12, fontWeight: '700' },
+  platformAllText: { color: '#888', fontSize: 22, fontWeight: '700' },
   platformAllTextActive: { color: '#e94560' },
   platformIconBtn: {
-    width: 48,
-    height: 48,
-    borderRadius: 10,
+    width: 60,
+    height: 60,
+    borderRadius: 20,
     borderWidth: 2,
     borderColor: 'transparent',
     overflow: 'hidden',
@@ -517,9 +520,19 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     padding: 4,
   },
-  platformFallbackText: { color: '#aaa', fontSize: 10, fontWeight: '600', textAlign: 'center' },
+  platformFallbackText: { color: '#aaa', fontSize: 14, fontWeight: '600', textAlign: 'center' },
   platformSearchNotice: { color: '#555', fontSize: 11, paddingHorizontal: 16, marginBottom: 6, fontStyle: 'italic' },
-  genreScroll: { height: 44, marginBottom: 8 },
+  sectionLabel: {
+    color: '#aaa',
+    fontSize: 11,
+    fontWeight: '600',
+    textTransform: 'uppercase',
+    letterSpacing: 0.8,
+    marginHorizontal: 16,
+    marginTop: 8,
+    marginBottom: 6,
+  },
+  genreScroll: { height: 44, marginBottom: 12 },
   genreScrollContent: { paddingHorizontal: 16, gap: 8, alignItems: 'center' },
   genreChip: {
     paddingHorizontal: 14,
