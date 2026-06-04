@@ -532,7 +532,7 @@ const styles = StyleSheet.create({
     marginTop: 8,
     marginBottom: 6,
   },
-  genreScroll: { height: 44, marginBottom: 12 },
+  genreScroll: { height: 52, marginBottom: 12 },
   genreScrollContent: { paddingHorizontal: 16, gap: 8, alignItems: 'center' },
   genreChip: {
     paddingHorizontal: 14,
