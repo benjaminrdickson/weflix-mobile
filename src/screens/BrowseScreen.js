@@ -11,6 +11,7 @@ import { edgeFn } from '../lib/edgeFunctions';
 import DetailModal from '../components/DetailModal';
 
 const TMDB_IMAGE_BASE = 'https://image.tmdb.org/t/p/w342';
+const TMDB_LOGO_BASE  = 'https://image.tmdb.org/t/p/original';
 const CONTENT_TYPES = [
   { key: 'movie', label: 'Movies' },
   { key: 'tv',    label: 'Shows'  },
@@ -50,6 +51,7 @@ export default function BrowseScreen() {
   const [browseContext, setBrowseContext] = useState('partner');
   const [contextPickerVisible, setContextPickerVisible] = useState(false);
   const [selectedProvider, setSelectedProvider] = useState(null);
+  const [providerLogos, setProviderLogos] = useState({});
 
   const activeRequest = useRef(null);
   const loadingRef = useRef(false);
@@ -57,6 +59,14 @@ export default function BrowseScreen() {
   const isMounted = useRef(true);
 
   useEffect(() => { return () => { isMounted.current = false; }; }, []);
+
+  // Fetch provider logos once on mount
+  useEffect(() => {
+    const region = Localization.getLocales()[0]?.regionCode || 'US';
+    edgeFn.get('browse/providers', { region })
+      .then(({ data }) => setProviderLogos(data))
+      .catch(() => {});
+  }, []);
 
   // Load groups list on focus; reset platform filter
   useFocusEffect(
@@ -281,42 +291,60 @@ export default function BrowseScreen() {
         style={styles.platformScroll}
         contentContainerStyle={styles.platformScrollContent}
       >
+        {/* "All" tile */}
         <TouchableOpacity
-          style={[styles.platformChip, !selectedProvider && styles.platformChipActive]}
+          style={[
+            styles.platformAllBtn,
+            !selectedProvider && styles.platformIconBtnActive,
+            !!submittedQuery && { opacity: 0.25 },
+          ]}
           onPress={() => setSelectedProvider(null)}
           disabled={!!submittedQuery}
+          activeOpacity={0.7}
         >
-          <Text style={[
-            styles.platformChipText,
-            !selectedProvider && styles.platformChipTextActive,
-            !!submittedQuery && styles.platformChipTextDisabled,
-          ]}>All</Text>
+          <Text style={[styles.platformAllText, !selectedProvider && styles.platformAllTextActive]}>
+            All
+          </Text>
         </TouchableOpacity>
-        {PLATFORMS.map(p => (
-          <TouchableOpacity
-            key={p.id}
-            style={[
-              styles.platformChip,
-              selectedProvider === p.id && styles.platformChipActive,
-              !!submittedQuery && styles.platformChipDisabled,
-            ]}
-            onPress={() => {
-              if (selectedProvider === p.id) {
-                setSelectedProvider(null);
-              } else {
-                setSelectedProvider(p.id);
-                setSelectedGenre(null);
-              }
-            }}
-            disabled={!!submittedQuery}
-          >
-            <Text style={[
-              styles.platformChipText,
-              selectedProvider === p.id && styles.platformChipTextActive,
-              !!submittedQuery && styles.platformChipTextDisabled,
-            ]}>{p.label}</Text>
-          </TouchableOpacity>
-        ))}
+
+        {/* Platform icon tiles */}
+        {PLATFORMS.map(p => {
+          const isSelected = selectedProvider === p.id;
+          const isOtherSelected = selectedProvider !== null && !isSelected;
+          const logoPath = providerLogos[p.id];
+          return (
+            <TouchableOpacity
+              key={p.id}
+              style={[
+                styles.platformIconBtn,
+                isSelected && styles.platformIconBtnActive,
+                isOtherSelected && { opacity: 0.5 },
+                !!submittedQuery && { opacity: 0.25 },
+              ]}
+              onPress={() => {
+                if (isSelected) {
+                  setSelectedProvider(null);
+                } else {
+                  setSelectedProvider(p.id);
+                  setSelectedGenre(null);
+                }
+              }}
+              disabled={!!submittedQuery}
+              activeOpacity={0.7}
+            >
+              {logoPath ? (
+                <Image
+                  source={{ uri: `${TMDB_LOGO_BASE}${logoPath}` }}
+                  style={styles.platformIconImg}
+                />
+              ) : (
+                <View style={styles.platformFallbackView}>
+                  <Text style={styles.platformFallbackText} numberOfLines={2}>{p.label}</Text>
+                </View>
+              )}
+            </TouchableOpacity>
+          );
+        })}
       </ScrollView>
       {!!submittedQuery && (
         <Text style={styles.platformSearchNotice}>Platform filter unavailable during search</Text>
@@ -457,21 +485,39 @@ const styles = StyleSheet.create({
   toggleBtnActive: { backgroundColor: '#e94560' },
   toggleText: { color: '#888', fontWeight: '600', fontSize: 14 },
   toggleTextActive: { color: '#fff' },
-  platformScroll: { height: 44, marginBottom: 4 },
+  platformScroll: { height: 60, marginBottom: 4 },
   platformScrollContent: { paddingHorizontal: 16, gap: 8, alignItems: 'center' },
-  platformChip: {
-    paddingHorizontal: 14,
-    paddingVertical: 6,
-    backgroundColor: '#16213e',
-    borderRadius: 20,
-    borderWidth: 1,
+  platformAllBtn: {
+    width: 48,
+    height: 48,
+    borderRadius: 10,
+    borderWidth: 2,
     borderColor: '#0f3460',
+    backgroundColor: '#16213e',
+    justifyContent: 'center',
+    alignItems: 'center',
   },
-  platformChipActive: { backgroundColor: '#e94560', borderColor: '#e94560' },
-  platformChipDisabled: { opacity: 0.35 },
-  platformChipText: { color: '#888', fontSize: 13, fontWeight: '500' },
-  platformChipTextActive: { color: '#fff' },
-  platformChipTextDisabled: { color: '#555' },
+  platformAllText: { color: '#888', fontSize: 12, fontWeight: '700' },
+  platformAllTextActive: { color: '#e94560' },
+  platformIconBtn: {
+    width: 48,
+    height: 48,
+    borderRadius: 10,
+    borderWidth: 2,
+    borderColor: 'transparent',
+    overflow: 'hidden',
+  },
+  platformIconBtnActive: { borderColor: '#e94560' },
+  platformIconImg: { width: '100%', height: '100%' },
+  platformFallbackView: {
+    width: '100%',
+    height: '100%',
+    backgroundColor: '#16213e',
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 4,
+  },
+  platformFallbackText: { color: '#aaa', fontSize: 10, fontWeight: '600', textAlign: 'center' },
   platformSearchNotice: { color: '#555', fontSize: 11, paddingHorizontal: 16, marginBottom: 6, fontStyle: 'italic' },
   genreScroll: { height: 44, marginBottom: 8 },
   genreScrollContent: { paddingHorizontal: 16, gap: 8, alignItems: 'center' },
