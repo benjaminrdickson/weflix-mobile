@@ -6,6 +6,7 @@ import {
 } from 'react-native';
 import * as Localization from 'expo-localization';
 import { openTrailer } from '../components/TrailerModal';
+import DetailModal from '../components/DetailModal';
 import { edgeFn } from '../lib/edgeFunctions';
 
 const TMDB_IMAGE_BASE = 'https://image.tmdb.org/t/p/w342';
@@ -34,12 +35,12 @@ function MemberAvatar({ user, size = 44 }) {
   );
 }
 
-function WatchlistCard({ item, onRemove }) {
+function WatchlistCard({ item, onRemove, onPress }) {
   const [expanded, setExpanded] = useState(false);
   const hasProviders = item.watch_providers?.flatrate?.length || item.watch_providers?.rent?.length || item.watch_providers?.buy?.length;
 
   return (
-    <View style={styles.watchCard}>
+    <TouchableOpacity style={styles.watchCard} activeOpacity={0.95} onPress={onPress}>
       <View style={styles.watchCardTop}>
         {item.poster_path ? (
           <Image source={{ uri: `${TMDB_IMAGE_BASE}${item.poster_path}` }} style={styles.watchPoster} />
@@ -78,7 +79,7 @@ function WatchlistCard({ item, onRemove }) {
       <TouchableOpacity style={styles.removeBtn} onPress={() => onRemove(item.watchlist_item_id)}>
         <Text style={styles.removeBtnText}>Remove</Text>
       </TouchableOpacity>
-    </View>
+    </TouchableOpacity>
   );
 }
 
@@ -98,6 +99,7 @@ export default function GroupDetailScreen({ route, navigation }) {
   const [inviting, setInviting] = useState(null);
   const [transferPickerVisible, setTransferPickerVisible] = useState(false);
   const [transferring, setTransferring] = useState(null);
+  const [selectedItem, setSelectedItem] = useState(null);
 
   const loadGroup = useCallback(async () => {
     try {
@@ -357,7 +359,7 @@ export default function GroupDetailScreen({ route, navigation }) {
                 : `No ${watchlistFilter === 'movie' ? 'movie' : 'show'} titles yet`}
             </Text>
           ) : filtered.map(item => (
-            <WatchlistCard key={item.watchlist_item_id} item={item} onRemove={handleRemoveWatchlistItem} />
+            <WatchlistCard key={item.watchlist_item_id} item={item} onRemove={handleRemoveWatchlistItem} onPress={() => setSelectedItem(item)} />
           ));
         })()}
       </View>
@@ -429,6 +431,16 @@ export default function GroupDetailScreen({ route, navigation }) {
           </View>
         </TouchableOpacity>
       </Modal>
+
+      <DetailModal
+        item={selectedItem}
+        genreMap={{}}
+        mode="group"
+        onRemove={async (item) => {
+          await handleRemoveWatchlistItem(item.watchlist_item_id);
+        }}
+        onClose={() => setSelectedItem(null)}
+      />
 
       {/* Invite modal */}
       <Modal visible={inviteVisible} transparent animationType="fade">

@@ -5,6 +5,7 @@ import {
   StyleSheet, ActivityIndicator, Alert, RefreshControl,
 } from 'react-native';
 import { openTrailer } from '../components/TrailerModal';
+import DetailModal from '../components/DetailModal';
 import * as Localization from 'expo-localization';
 import { edgeFn } from '../lib/edgeFunctions';
 import { supabase } from '../lib/supabase';
@@ -62,7 +63,7 @@ function ProviderRow({ label, providers }) {
   );
 }
 
-function FavoriteCard({ item, onRemove }) {
+function FavoriteCard({ item, onRemove, onPress }) {
   const [expanded, setExpanded] = useState(false);
 
   const hasProviders =
@@ -71,7 +72,7 @@ function FavoriteCard({ item, onRemove }) {
     item.watch_providers?.buy?.length;
 
   return (
-    <View style={styles.card}>
+    <TouchableOpacity style={styles.card} activeOpacity={0.95} onPress={onPress}>
       <View style={styles.cardTop}>
         {item.poster_path ? (
           <Image source={{ uri: `${TMDB_IMAGE_BASE}${item.poster_path}` }} style={styles.cardPoster} />
@@ -112,7 +113,7 @@ function FavoriteCard({ item, onRemove }) {
       <TouchableOpacity style={styles.removeBtn} onPress={() => onRemove(item.favorite_id)}>
         <Text style={styles.removeBtnText}>Remove from Watchlist</Text>
       </TouchableOpacity>
-    </View>
+    </TouchableOpacity>
   );
 }
 
@@ -125,6 +126,7 @@ export default function FavoritesScreen() {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [filter, setFilter] = useState('all');
+  const [selectedItem, setSelectedItem] = useState(null);
 
   const region = Localization.getLocales()[0]?.regionCode || 'US';
 
@@ -173,48 +175,59 @@ export default function FavoritesScreen() {
   const filtered = filter === 'all' ? favorites : favorites.filter((f) => f.content_type === filter);
 
   return (
-    <FlatList
-      style={styles.container}
-      data={filtered}
-      keyExtractor={(item) => String(item.favorite_id)}
-      ListHeaderComponent={
-        <View>
-          <Text style={styles.screenTitle}>Partner Watchlist</Text>
-          {partner ? (
-            <PartnerHeader user={currentUser} partner={partner} />
-          ) : (
-            <Text style={styles.noPartnerText}>
-              Connect with a partner to start a shared watchlist
-            </Text>
-          )}
-          <View style={styles.toggle}>
-            {FILTERS.map((f) => (
-              <TouchableOpacity
-                key={f}
-                style={[styles.toggleBtn, filter === f && styles.toggleBtnActive]}
-                onPress={() => setFilter(f)}
-              >
-                <Text style={[styles.toggleText, filter === f && styles.toggleTextActive]}>
-                  {f === 'all' ? 'All' : f === 'movie' ? 'Movies' : 'Shows'}
-                </Text>
-              </TouchableOpacity>
-            ))}
+    <View style={styles.container}>
+      <FlatList
+        data={filtered}
+        keyExtractor={(item) => String(item.favorite_id)}
+        ListHeaderComponent={
+          <View>
+            <Text style={styles.screenTitle}>Partner Watchlist</Text>
+            {partner ? (
+              <PartnerHeader user={currentUser} partner={partner} />
+            ) : (
+              <Text style={styles.noPartnerText}>
+                Connect with a partner to start a shared watchlist
+              </Text>
+            )}
+            <View style={styles.toggle}>
+              {FILTERS.map((f) => (
+                <TouchableOpacity
+                  key={f}
+                  style={[styles.toggleBtn, filter === f && styles.toggleBtnActive]}
+                  onPress={() => setFilter(f)}
+                >
+                  <Text style={[styles.toggleText, filter === f && styles.toggleTextActive]}>
+                    {f === 'all' ? 'All' : f === 'movie' ? 'Movies' : 'Shows'}
+                  </Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+            {filtered.length === 0 && (
+              <Text style={styles.emptyText}>
+                {favorites.length === 0
+                  ? 'No titles in your partner watchlist yet — start swiping together!'
+                  : `No ${filter === 'movie' ? 'movie' : 'show'} titles yet`}
+              </Text>
+            )}
           </View>
-          {filtered.length === 0 && (
-            <Text style={styles.emptyText}>
-              {favorites.length === 0
-                ? 'No titles in your partner watchlist yet — start swiping together!'
-                : `No ${filter === 'movie' ? 'movie' : 'show'} titles yet`}
-            </Text>
-          )}
-        </View>
-      }
-      renderItem={({ item }) => <FavoriteCard item={item} onRemove={handleRemove} />}
-      contentContainerStyle={styles.listContent}
-      refreshControl={
-        <RefreshControl refreshing={refreshing} onRefresh={() => { setRefreshing(true); loadData(); }} tintColor="#e94560" />
-      }
-    />
+        }
+        renderItem={({ item }) => <FavoriteCard item={item} onRemove={handleRemove} onPress={() => setSelectedItem(item)} />}
+        contentContainerStyle={styles.listContent}
+        refreshControl={
+          <RefreshControl refreshing={refreshing} onRefresh={() => { setRefreshing(true); loadData(); }} tintColor="#e94560" />
+        }
+      />
+      <DetailModal
+        item={selectedItem}
+        genreMap={{}}
+        mode="partner"
+        onRemove={async (item) => {
+          await edgeFn.delete(`favorites/${item.favorite_id}`);
+          setFavorites(prev => prev.filter(f => f.favorite_id !== item.favorite_id));
+        }}
+        onClose={() => setSelectedItem(null)}
+      />
+    </View>
   );
 }
 
