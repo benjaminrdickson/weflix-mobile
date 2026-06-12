@@ -246,7 +246,7 @@ export default function NotificationsScreen({ navigation }) {
 
       {loading ? (
         <View style={styles.centered}>
-          <ActivityIndicator size="large" color="#e94560" />
+          <ActivityIndicator size="large" color="#C9A84C" />
         </View>
       ) : (
         <FlatList
@@ -266,7 +266,7 @@ export default function NotificationsScreen({ navigation }) {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#1a1a2e' },
+  container: { flex: 1, backgroundColor: '#1a0505' },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -275,38 +275,38 @@ const styles = StyleSheet.create({
     marginBottom: 8,
     paddingHorizontal: 16,
   },
-  screenTitle: { color: '#fff', fontSize: 28, fontWeight: 'bold' },
-  clearBtn: { color: '#e94560', fontSize: 14, fontWeight: '600' },
+  screenTitle: { color: '#C9A84C', fontSize: 28, fontWeight: 'bold' },
+  clearBtn: { color: '#C9A84C', fontSize: 14, fontWeight: '600' },
   centered: { flex: 1, justifyContent: 'center', alignItems: 'center', paddingTop: 60 },
-  emptyText: { color: '#888', fontSize: 15 },
+  emptyText: { color: '#8a6a30', fontSize: 15 },
   list: { paddingHorizontal: 16, paddingBottom: 32 },
   item: {
     flexDirection: 'row',
     alignItems: 'flex-start',
-    backgroundColor: '#16213e',
+    backgroundColor: '#8B2A2A',
     borderRadius: 12,
     padding: 14,
     marginBottom: 10,
     borderWidth: 1,
-    borderColor: '#0f3460',
+    borderColor: '#C9A84C',
     gap: 12,
   },
   itemRead: { opacity: 0.6 },
   itemIcon: { fontSize: 24, width: 32, textAlign: 'center', marginTop: 2 },
   itemBody: { flex: 1 },
-  itemMessage: { color: '#fff', fontSize: 14, fontWeight: '600', marginBottom: 4, lineHeight: 19 },
+  itemMessage: { color: '#ddc9a8', fontSize: 14, fontWeight: '600', marginBottom: 4, lineHeight: 19 },
   itemMessageRead: { fontWeight: '400' },
-  itemTime: { color: '#888', fontSize: 12 },
-  itemTappable: { borderColor: '#1a3a5c' },
+  itemTime: { color: '#8a6a30', fontSize: 12 },
+  itemTappable: { borderColor: '#C9A84C' },
   itemRight: { alignItems: 'center', gap: 4 },
-  unreadDot: { width: 8, height: 8, borderRadius: 4, backgroundColor: '#e94560' },
-  chevron: { color: '#555', fontSize: 20 },
+  unreadDot: { width: 8, height: 8, borderRadius: 4, backgroundColor: '#C9A84C' },
+  chevron: { color: '#8a6a30', fontSize: 20 },
   inviteActions: { flexDirection: 'row', gap: 8, marginTop: 10 },
-  acceptBtn: { backgroundColor: '#e94560', borderRadius: 8, paddingHorizontal: 16, paddingVertical: 7 },
-  acceptBtnText: { color: '#fff', fontWeight: 'bold', fontSize: 13 },
-  declineBtn: { backgroundColor: '#0f3460', borderRadius: 8, paddingHorizontal: 16, paddingVertical: 7 },
-  declineBtnText: { color: '#aaa', fontWeight: '600', fontSize: 13 },
+  acceptBtn: { backgroundColor: '#8B1A1A', borderRadius: 8, paddingHorizontal: 16, paddingVertical: 7, borderWidth: 1, borderColor: '#C9A84C' },
+  acceptBtnText: { color: '#C9A84C', fontWeight: 'bold', fontSize: 13 },
+  declineBtn: { backgroundColor: '#5a2a2a', borderRadius: 8, paddingHorizontal: 16, paddingVertical: 7 },
+  declineBtnText: { color: '#8a6a30', fontWeight: '600', fontSize: 13 },
   responseText: { fontSize: 13, marginTop: 8, fontStyle: 'italic' },
   responseAccepted: { color: '#4caf50' },
-  responseDeclined: { color: '#888' },
+  responseDeclined: { color: '#8a6a30' },
 });

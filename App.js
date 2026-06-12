@@ -71,12 +71,10 @@ function App() {
   const [showPermissionModal, setShowPermissionModal] = useState(false);
 
   useEffect(() => {
-    // Get initial session
     supabase.auth.getSession().then(({ data: { session: s } }) => {
       setSession(s ?? null);
     });
 
-    // Listen for auth state changes (login/logout)
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, s) => {
       setSession(s ?? null);
     });
@@ -88,7 +86,6 @@ function App() {
     if (!session) return;
     AsyncStorage.getItem('push_permission_asked').then(async (asked) => {
       if (asked) {
-        // Already decided — re-register token silently in case it changed
         if (!Device.isDevice) return;
         const { status } = await Notifications.getPermissionsAsync();
         if (status === 'granted') {
@@ -119,11 +116,10 @@ function App() {
     await supabase.auth.signOut();
   };
 
-  // Still loading initial session
   if (session === undefined) {
     return (
-      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#1a1a2e' }}>
-        <ActivityIndicator size="large" color="#e94560" />
+      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#1a0505' }}>
+        <ActivityIndicator size="large" color="#C9A84C" />
       </View>
     );
   }
@@ -151,15 +147,15 @@ const styles = StyleSheet.create({
     justifyContent: 'center', alignItems: 'center',
   },
   explainerBox: {
-    backgroundColor: '#16213e', borderRadius: 20, padding: 28,
-    marginHorizontal: 24, borderWidth: 1, borderColor: '#0f3460',
+    backgroundColor: '#1a0505', borderRadius: 20, padding: 28,
+    marginHorizontal: 24, borderWidth: 1, borderColor: '#C9A84C',
   },
-  explainerTitle: { color: '#fff', fontSize: 20, fontWeight: 'bold', marginBottom: 12, textAlign: 'center' },
-  explainerBody: { color: '#ccc', fontSize: 15, lineHeight: 22, textAlign: 'center', marginBottom: 24 },
-  explainerAllow: { backgroundColor: '#e94560', borderRadius: 12, padding: 16, alignItems: 'center', marginBottom: 10 },
-  explainerAllowText: { color: '#fff', fontWeight: 'bold', fontSize: 16 },
+  explainerTitle: { color: '#C9A84C', fontSize: 20, fontWeight: 'bold', marginBottom: 12, textAlign: 'center' },
+  explainerBody: { color: '#ddc9a8', fontSize: 15, lineHeight: 22, textAlign: 'center', marginBottom: 24 },
+  explainerAllow: { backgroundColor: '#8B1A1A', borderRadius: 12, padding: 16, alignItems: 'center', marginBottom: 10, borderWidth: 1, borderColor: '#C9A84C' },
+  explainerAllowText: { color: '#C9A84C', fontWeight: 'bold', fontSize: 16 },
   explainerSkip: { padding: 10, alignItems: 'center' },
-  explainerSkipText: { color: '#888', fontSize: 14 },
+  explainerSkipText: { color: '#8a6a30', fontSize: 14 },
 });
 
 registerRootComponent(App);

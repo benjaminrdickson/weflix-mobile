@@ -4,6 +4,6 @@ export function openTrailer(videoKey) {
   if (!videoKey) return;
   WebBrowser.openBrowserAsync(`https://www.youtube.com/watch?v=${videoKey}`, {
     presentationStyle: WebBrowser.WebBrowserPresentationStyle.FORM_SHEET,
-    toolbarColor: '#1a1a2e',
+    toolbarColor: '#1a0505',
   });
 }

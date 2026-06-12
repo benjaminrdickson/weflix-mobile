@@ -36,7 +36,6 @@ export default function SignupScreen({ navigation }) {
       });
       if (error) throw error;
 
-      // Sign out immediately so user explicitly logs in (preserves current UX)
       await supabase.auth.signOut();
       Alert.alert('Account created!', 'You can now log in.', [
         { text: 'OK', onPress: () => navigation.navigate('Login') },
@@ -50,7 +49,7 @@ export default function SignupScreen({ navigation }) {
 
   return (
     <KeyboardAvoidingView
-      style={{ flex: 1, backgroundColor: '#1a1a2e' }}
+      style={{ flex: 1, backgroundColor: '#1a0505' }}
       behavior={Platform.OS === 'ios' ? 'padding' : undefined}
     >
       <ScrollView contentContainerStyle={styles.container}>
@@ -67,7 +66,7 @@ export default function SignupScreen({ navigation }) {
             key={field}
             style={styles.input}
             placeholder={placeholder}
-            placeholderTextColor="#888"
+            placeholderTextColor="#8a6a30"
             value={form[field]}
             onChangeText={set(field)}
             secureTextEntry={secure}
@@ -77,7 +76,7 @@ export default function SignupScreen({ navigation }) {
         ))}
 
         {loading ? (
-          <ActivityIndicator size="large" color="#e94560" style={{ marginTop: 16 }} />
+          <ActivityIndicator size="large" color="#C9A84C" style={{ marginTop: 16 }} />
         ) : (
           <TouchableOpacity style={styles.button} onPress={handleSignup}>
             <Text style={styles.buttonText}>Sign Up</Text>
@@ -102,35 +101,37 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 32,
     fontWeight: 'bold',
-    color: '#e94560',
+    color: '#C9A84C',
     textAlign: 'center',
     marginBottom: 32,
   },
   input: {
-    backgroundColor: '#16213e',
-    color: '#fff',
+    backgroundColor: '#8B2A2A',
+    color: '#ddc9a8',
     borderRadius: 10,
     padding: 16,
     marginBottom: 16,
     fontSize: 16,
     borderWidth: 1,
-    borderColor: '#0f3460',
+    borderColor: '#C9A84C',
   },
   button: {
-    backgroundColor: '#e94560',
+    backgroundColor: '#8B1A1A',
     borderRadius: 10,
     padding: 16,
     alignItems: 'center',
     marginTop: 8,
     marginBottom: 24,
+    borderWidth: 1,
+    borderColor: '#C9A84C',
   },
   buttonText: {
-    color: '#fff',
+    color: '#C9A84C',
     fontSize: 18,
     fontWeight: 'bold',
   },
   link: {
-    color: '#e94560',
+    color: '#C9A84C',
     textAlign: 'center',
     fontSize: 15,
   },

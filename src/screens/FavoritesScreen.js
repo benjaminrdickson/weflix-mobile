@@ -6,6 +6,7 @@ import {
 } from 'react-native';
 import { openTrailer } from '../components/TrailerModal';
 import DetailModal from '../components/DetailModal';
+import TicketCard from '../components/TicketCard';
 import * as Localization from 'expo-localization';
 import { edgeFn } from '../lib/edgeFunctions';
 import { supabase } from '../lib/supabase';
@@ -72,47 +73,49 @@ function FavoriteCard({ item, onRemove, onPress }) {
     item.watch_providers?.buy?.length;
 
   return (
-    <TouchableOpacity style={styles.card} activeOpacity={0.95} onPress={onPress}>
-      <View style={styles.cardTop}>
-        {item.poster_path ? (
-          <Image source={{ uri: `${TMDB_IMAGE_BASE}${item.poster_path}` }} style={styles.cardPoster} />
-        ) : (
-          <View style={[styles.cardPoster, styles.posterFallback]} />
-        )}
-        <View style={styles.cardDetails}>
-          <View style={styles.typeBadge}>
-            <Text style={styles.typeBadgeText}>{item.content_type === 'tv' ? '📺 TV' : '🎬 Movie'}</Text>
-          </View>
-          <Text style={styles.cardTitle} numberOfLines={2}>{item.title}</Text>
-          {item.genre ? <Text style={styles.cardGenre}>{item.genre}</Text> : null}
-          <Text style={styles.cardYear}>{item.release_date?.slice(0, 4)}</Text>
-          <Text style={styles.cardOverview} numberOfLines={expanded ? undefined : 3}>{item.overview}</Text>
-          {item.overview?.length > 0 && (
-            <TouchableOpacity onPress={() => setExpanded(e => !e)}>
-              <Text style={styles.overviewToggle}>{expanded ? 'less' : 'more'}</Text>
-            </TouchableOpacity>
+    <TouchableOpacity activeOpacity={0.95} onPress={onPress}>
+      <TicketCard posterWidth={90} style={{ marginHorizontal: 16, marginBottom: 20 }}>
+        <View style={styles.cardTop}>
+          {item.poster_path ? (
+            <Image source={{ uri: `${TMDB_IMAGE_BASE}${item.poster_path}` }} style={styles.cardPoster} />
+          ) : (
+            <View style={[styles.cardPoster, styles.posterFallback]} />
           )}
-          <TouchableOpacity onPress={() => openTrailer(item.videos)}>
-            <Text style={styles.trailerLink}>▶ Trailer</Text>
-          </TouchableOpacity>
+          <View style={styles.cardDetails}>
+            <View style={styles.typeBadge}>
+              <Text style={styles.typeBadgeText}>{item.content_type === 'tv' ? '📺 TV' : '🎬 Movie'}</Text>
+            </View>
+            <Text style={styles.cardTitle} numberOfLines={2}>{item.title}</Text>
+            {item.genre ? <Text style={styles.cardGenre}>{item.genre}</Text> : null}
+            <Text style={styles.cardYear}>{item.release_date?.slice(0, 4)}</Text>
+            <Text style={styles.cardOverview} numberOfLines={expanded ? undefined : 3}>{item.overview}</Text>
+            {item.overview?.length > 0 && (
+              <TouchableOpacity onPress={() => setExpanded(e => !e)}>
+                <Text style={styles.overviewToggle}>{expanded ? 'less' : 'more'}</Text>
+              </TouchableOpacity>
+            )}
+            <TouchableOpacity onPress={() => openTrailer(item.videos)}>
+              <Text style={styles.trailerLink}>▶ Trailer</Text>
+            </TouchableOpacity>
+          </View>
         </View>
-      </View>
 
-      <View style={styles.providersSection}>
-        {hasProviders ? (
-          <>
-            <ProviderRow label="Stream" providers={item.watch_providers?.flatrate} />
-            <ProviderRow label="Rent" providers={item.watch_providers?.rent} />
-            <ProviderRow label="Buy" providers={item.watch_providers?.buy} />
-          </>
-        ) : (
-          <Text style={styles.noProviders}>Not available for streaming in your region</Text>
-        )}
-      </View>
+        <View style={styles.providersSection}>
+          {hasProviders ? (
+            <>
+              <ProviderRow label="Stream" providers={item.watch_providers?.flatrate} />
+              <ProviderRow label="Rent" providers={item.watch_providers?.rent} />
+              <ProviderRow label="Buy" providers={item.watch_providers?.buy} />
+            </>
+          ) : (
+            <Text style={styles.noProviders}>Not available for streaming in your region</Text>
+          )}
+        </View>
 
-      <TouchableOpacity style={styles.removeBtn} onPress={() => onRemove(item.favorite_id)}>
-        <Text style={styles.removeBtnText}>Remove from Watchlist</Text>
-      </TouchableOpacity>
+        <TouchableOpacity style={styles.removeBtn} onPress={() => onRemove(item.favorite_id)}>
+          <Text style={styles.removeBtnText}>Remove from Watchlist</Text>
+        </TouchableOpacity>
+      </TicketCard>
     </TouchableOpacity>
   );
 }
@@ -167,7 +170,7 @@ export default function FavoritesScreen() {
   if (loading) {
     return (
       <View style={styles.centered}>
-        <ActivityIndicator size="large" color="#e94560" />
+        <ActivityIndicator size="large" color="#C9A84C" />
       </View>
     );
   }
@@ -214,7 +217,7 @@ export default function FavoritesScreen() {
         renderItem={({ item }) => <FavoriteCard item={item} onRemove={handleRemove} onPress={() => setSelectedItem(item)} />}
         contentContainerStyle={styles.listContent}
         refreshControl={
-          <RefreshControl refreshing={refreshing} onRefresh={() => { setRefreshing(true); loadData(); }} tintColor="#e94560" />
+          <RefreshControl refreshing={refreshing} onRefresh={() => { setRefreshing(true); loadData(); }} tintColor="#C9A84C" />
         }
       />
       <DetailModal
@@ -232,11 +235,11 @@ export default function FavoritesScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#1a1a2e' },
-  centered: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#1a1a2e' },
+  container: { flex: 1, backgroundColor: '#1a0505' },
+  centered: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#1a0505' },
   listContent: { paddingBottom: 32 },
   screenTitle: {
-    color: '#fff',
+    color: '#C9A84C',
     fontSize: 28,
     fontWeight: 'bold',
     textAlign: 'center',
@@ -250,18 +253,18 @@ const styles = StyleSheet.create({
     marginBottom: 24,
     gap: 16,
   },
-  heartDivider: { fontSize: 28, color: '#e94560' },
+  heartDivider: { fontSize: 28, color: '#C9A84C' },
   avatarWrapper: { alignItems: 'center', gap: 6 },
-  avatar: { width: 64, height: 64, borderRadius: 32, borderWidth: 2, borderColor: '#e94560' },
-  avatarFallback: { backgroundColor: '#0f3460', justifyContent: 'center', alignItems: 'center' },
-  avatarInitial: { color: '#fff', fontSize: 24, fontWeight: 'bold' },
-  avatarName: { color: '#ccc', fontSize: 13 },
+  avatar: { width: 64, height: 64, borderRadius: 32, borderWidth: 2, borderColor: '#C9A84C' },
+  avatarFallback: { backgroundColor: '#5a2a2a', justifyContent: 'center', alignItems: 'center' },
+  avatarInitial: { color: '#ddc9a8', fontSize: 24, fontWeight: 'bold' },
+  avatarName: { color: '#ddc9a8', fontSize: 13 },
   avatarPlaceholder: { width: 64, height: 64 },
   toggle: {
     flexDirection: 'row',
     marginHorizontal: 16,
     marginBottom: 16,
-    backgroundColor: '#16213e',
+    backgroundColor: '#1a0505',
     borderRadius: 12,
     padding: 4,
   },
@@ -270,53 +273,46 @@ const styles = StyleSheet.create({
     paddingVertical: 10,
     borderRadius: 10,
     alignItems: 'center',
-  },
-  toggleBtnActive: { backgroundColor: '#e94560' },
-  toggleText: { color: '#888', fontWeight: '600', fontSize: 14 },
-  toggleTextActive: { color: '#fff' },
-  noPartnerText: { color: '#888', textAlign: 'center', marginTop: 8, marginBottom: 24, fontSize: 15, paddingHorizontal: 32 },
-  emptyText: { color: '#888', textAlign: 'center', marginTop: 40, fontSize: 16, paddingHorizontal: 32 },
-  card: {
-    backgroundColor: '#16213e',
-    borderRadius: 16,
-    marginHorizontal: 16,
-    marginBottom: 20,
-    overflow: 'hidden',
     borderWidth: 1,
-    borderColor: '#0f3460',
+    borderColor: '#4a1a1a',
   },
+  toggleBtnActive: { backgroundColor: '#8B1A1A', borderColor: '#C9A84C' },
+  toggleText: { color: '#7a4030', fontWeight: '600', fontSize: 14 },
+  toggleTextActive: { color: '#C9A84C' },
+  noPartnerText: { color: '#8a6a30', textAlign: 'center', marginTop: 8, marginBottom: 24, fontSize: 15, paddingHorizontal: 32 },
+  emptyText: { color: '#8a6a30', textAlign: 'center', marginTop: 40, fontSize: 16, paddingHorizontal: 32 },
   cardTop: { flexDirection: 'row', padding: 12, gap: 12 },
   cardPoster: { width: 90, height: 130, borderRadius: 8 },
-  posterFallback: { backgroundColor: '#0f3460' },
+  posterFallback: { backgroundColor: '#5a1a1a' },
   cardDetails: { flex: 1 },
   typeBadge: {
-    backgroundColor: '#0f3460',
+    backgroundColor: '#5a2a2a',
     borderRadius: 6,
     paddingHorizontal: 8,
     paddingVertical: 3,
     alignSelf: 'flex-start',
     marginBottom: 6,
   },
-  typeBadgeText: { color: '#aaa', fontSize: 11 },
-  cardTitle: { color: '#fff', fontSize: 16, fontWeight: 'bold', marginBottom: 4 },
-  cardGenre: { color: '#e94560', fontSize: 12, marginBottom: 2 },
-  cardYear: { color: '#888', fontSize: 12, marginBottom: 6 },
-  cardOverview: { color: '#ccc', fontSize: 13, lineHeight: 18, marginBottom: 4 },
-  overviewToggle: { color: '#e94560', fontSize: 12, fontWeight: '600', marginBottom: 8 },
-  trailerLink: { color: '#e94560', fontSize: 13, fontWeight: '600' },
+  typeBadgeText: { color: '#8a6a30', fontSize: 11 },
+  cardTitle: { color: '#C9A84C', fontSize: 16, fontWeight: 'bold', marginBottom: 4 },
+  cardGenre: { color: '#C9A84C', fontSize: 12, marginBottom: 2 },
+  cardYear: { color: '#8a6a30', fontSize: 12, marginBottom: 6 },
+  cardOverview: { color: '#ddc9a8', fontSize: 13, lineHeight: 18, marginBottom: 4 },
+  overviewToggle: { color: '#C9A84C', fontSize: 12, fontWeight: '600', marginBottom: 8 },
+  trailerLink: { color: '#C9A84C', fontSize: 13, fontWeight: '600' },
   providersSection: { paddingHorizontal: 12, paddingBottom: 12 },
   providerRow: { marginBottom: 6 },
-  providerLabel: { color: '#888', fontSize: 12, marginBottom: 4 },
+  providerLabel: { color: '#8a6a30', fontSize: 12, marginBottom: 4 },
   providerLogos: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
-  providerChip: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#0f3460', borderRadius: 6, padding: 4, gap: 4 },
+  providerChip: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#5a2a2a', borderRadius: 6, padding: 4, gap: 4 },
   providerLogo: { width: 20, height: 20, borderRadius: 4 },
-  providerName: { color: '#ccc', fontSize: 11, maxWidth: 80 },
-  noProviders: { color: '#555', fontSize: 12, fontStyle: 'italic' },
+  providerName: { color: '#ddc9a8', fontSize: 11, maxWidth: 80 },
+  noProviders: { color: '#5a2a2a', fontSize: 12, fontStyle: 'italic' },
   removeBtn: {
     borderTopWidth: 1,
-    borderTopColor: '#0f3460',
+    borderTopColor: '#C9A84C',
     padding: 12,
     alignItems: 'center',
   },
-  removeBtnText: { color: '#e94560', fontSize: 14, fontWeight: '600' },
+  removeBtnText: { color: '#C9A84C', fontSize: 14, fontWeight: '600' },
 });
