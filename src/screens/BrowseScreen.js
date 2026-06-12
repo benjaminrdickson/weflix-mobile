@@ -9,7 +9,6 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as Localization from 'expo-localization';
 import { edgeFn } from '../lib/edgeFunctions';
 import DetailModal from '../components/DetailModal';
-import TicketCard from '../components/TicketCard';
 
 const TMDB_IMAGE_BASE = 'https://image.tmdb.org/t/p/w342';
 const TMDB_LOGO_BASE  = 'https://image.tmdb.org/t/p/original';
@@ -60,6 +59,7 @@ export default function BrowseScreen() {
 
   useEffect(() => { return () => { isMounted.current = false; }; }, []);
 
+  // Fetch provider logos once on mount
   useEffect(() => {
     const region = Localization.getLocales()[0]?.regionCode || 'US';
     edgeFn.get('browse/providers', { region })
@@ -67,6 +67,7 @@ export default function BrowseScreen() {
       .catch(() => {});
   }, []);
 
+  // Load groups list on focus; reset platform filter
   useFocusEffect(
     useCallback(() => {
       edgeFn.get('groups').then(({ data }) => setGroups(data)).catch(() => {});
@@ -74,6 +75,7 @@ export default function BrowseScreen() {
     }, [])
   );
 
+  // Fetch genre list whenever content type changes
   useEffect(() => {
     edgeFn.get('genres', { content_type: contentType })
       .then(({ data }) => {
@@ -85,6 +87,7 @@ export default function BrowseScreen() {
       .catch(() => {});
   }, [contentType]);
 
+  // On mount: resume from last saved page
   useEffect(() => {
     AsyncStorage.getItem('browse_last_page_partner').then(saved => {
       const startPage = saved ? parseInt(saved, 10) : 1;
@@ -93,6 +96,7 @@ export default function BrowseScreen() {
     });
   }, []);
 
+  // On filter changes: reset to page 1
   useEffect(() => {
     if (!hasInitialized.current) return;
     loadPage(1, true);
@@ -183,51 +187,49 @@ export default function BrowseScreen() {
     const genreLabels = (item.genre_ids || []).slice(0, 3).map(id => genreMap[id]).filter(Boolean);
 
     return (
-      <TouchableOpacity activeOpacity={0.92} onPress={() => setSelectedItem(item)} style={{ marginBottom: 12 }}>
-        <TicketCard posterWidth={100} style={{ flexDirection: 'row', minHeight: 155 }}>
-          {item.poster_path ? (
-            <Image
-              source={{ uri: `${TMDB_IMAGE_BASE}${item.poster_path}` }}
-              style={styles.poster}
-              resizeMode="cover"
-            />
-          ) : (
-            <View style={[styles.poster, styles.posterFallback]}>
-              <Text style={styles.posterFallbackText}>No Image</Text>
-            </View>
-          )}
-
-          <View style={styles.cardBody}>
-            <View style={styles.cardTitleRow}>
-              <Text style={styles.cardTitle} numberOfLines={1}>{item.title}</Text>
-              <Text style={styles.cardYear}>{year}</Text>
-            </View>
-
-            <View style={styles.badgeRow}>
-              <View style={styles.typeBadge}>
-                <Text style={styles.typeBadgeText}>
-                  {item.content_type === 'tv' ? '📺' : '🎬'}
-                </Text>
-              </View>
-              {genreLabels.map(g => (
-                <View key={g} style={styles.genreBadge}>
-                  <Text style={styles.genreBadgeText}>{g}</Text>
-                </View>
-              ))}
-            </View>
-
-            <Text style={styles.overview} numberOfLines={2}>{item.overview}</Text>
-
-            <View style={styles.cardActions}>
-              <TouchableOpacity style={styles.passBtn} onPress={() => handlePass(item)}>
-                <Text style={styles.passBtnText}>✕  Pass</Text>
-              </TouchableOpacity>
-              <TouchableOpacity style={styles.likeBtn} onPress={() => handleLike(item)}>
-                <Text style={styles.likeBtnText}>❤  Like</Text>
-              </TouchableOpacity>
-            </View>
+      <TouchableOpacity style={styles.card} activeOpacity={0.92} onPress={() => setSelectedItem(item)}>
+        {item.poster_path ? (
+          <Image
+            source={{ uri: `${TMDB_IMAGE_BASE}${item.poster_path}` }}
+            style={styles.poster}
+            resizeMode="cover"
+          />
+        ) : (
+          <View style={[styles.poster, styles.posterFallback]}>
+            <Text style={styles.posterFallbackText}>No Image</Text>
           </View>
-        </TicketCard>
+        )}
+
+        <View style={styles.cardBody}>
+          <View style={styles.cardTitleRow}>
+            <Text style={styles.cardTitle} numberOfLines={1}>{item.title}</Text>
+            <Text style={styles.cardYear}>{year}</Text>
+          </View>
+
+          <View style={styles.badgeRow}>
+            <View style={styles.typeBadge}>
+              <Text style={styles.typeBadgeText}>
+                {item.content_type === 'tv' ? '📺' : '🎬'}
+              </Text>
+            </View>
+            {genreLabels.map(g => (
+              <View key={g} style={styles.genreBadge}>
+                <Text style={styles.genreBadgeText}>{g}</Text>
+              </View>
+            ))}
+          </View>
+
+          <Text style={styles.overview} numberOfLines={2}>{item.overview}</Text>
+
+          <View style={styles.cardActions}>
+            <TouchableOpacity style={styles.passBtn} onPress={() => handlePass(item)}>
+              <Text style={styles.passBtnText}>✕  Pass</Text>
+            </TouchableOpacity>
+            <TouchableOpacity style={styles.likeBtn} onPress={() => handleLike(item)}>
+              <Text style={styles.likeBtnText}>❤  Like</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
       </TouchableOpacity>
     );
   };
@@ -239,7 +241,7 @@ export default function BrowseScreen() {
         <TextInput
           style={styles.searchInput}
           placeholder="Search movies & shows..."
-          placeholderTextColor="#8a6a30"
+          placeholderTextColor="#666"
           value={query}
           onChangeText={setQuery}
           onSubmitEditing={() => setSubmittedQuery(query.trim())}
@@ -289,6 +291,7 @@ export default function BrowseScreen() {
         style={styles.platformScroll}
         contentContainerStyle={styles.platformScrollContent}
       >
+        {/* "All" tile */}
         <TouchableOpacity
           style={[
             styles.platformAllBtn,
@@ -304,6 +307,7 @@ export default function BrowseScreen() {
           </Text>
         </TouchableOpacity>
 
+        {/* Platform icon tiles */}
         {PLATFORMS.map(p => {
           const isSelected = selectedProvider === p.id;
           const isOtherSelected = selectedProvider !== null && !isSelected;
@@ -380,7 +384,7 @@ export default function BrowseScreen() {
       {/* List */}
       {loadingFirst ? (
         <View style={styles.centered}>
-          <ActivityIndicator size="large" color="#C9A84C" />
+          <ActivityIndicator size="large" color="#e94560" />
         </View>
       ) : (
         <FlatList
@@ -397,7 +401,7 @@ export default function BrowseScreen() {
           }
           ListFooterComponent={
             loadingMore
-              ? <ActivityIndicator color="#C9A84C" style={{ marginVertical: 24 }} />
+              ? <ActivityIndicator color="#e94560" style={{ marginVertical: 24 }} />
               : exhausted && items.length > 0
                 ? <Text style={styles.exhaustedText}>You've seen everything!</Text>
                 : null
@@ -444,7 +448,7 @@ export default function BrowseScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#1a0505' },
+  container: { flex: 1, backgroundColor: '#1a1a2e' },
   searchRow: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -455,35 +459,35 @@ const styles = StyleSheet.create({
   },
   searchInput: {
     flex: 1,
-    backgroundColor: '#8B2A2A',
-    color: '#ddc9a8',
+    backgroundColor: '#16213e',
+    color: '#fff',
     borderRadius: 10,
     paddingHorizontal: 14,
     paddingVertical: 10,
     fontSize: 15,
     borderWidth: 1,
-    borderColor: '#C9A84C',
+    borderColor: '#0f3460',
   },
   clearBtn: {
-    backgroundColor: '#8B2A2A',
+    backgroundColor: '#16213e',
     borderRadius: 10,
     padding: 10,
     borderWidth: 1,
-    borderColor: '#C9A84C',
+    borderColor: '#0f3460',
   },
-  clearBtnText: { color: '#8a6a30', fontSize: 14 },
+  clearBtnText: { color: '#aaa', fontSize: 14 },
   toggle: {
     flexDirection: 'row',
     marginHorizontal: 16,
     marginBottom: 12,
-    backgroundColor: '#1a0505',
+    backgroundColor: '#16213e',
     borderRadius: 12,
     padding: 4,
   },
-  toggleBtn: { flex: 1, paddingVertical: 8, borderRadius: 10, alignItems: 'center', borderWidth: 1, borderColor: '#4a1a1a' },
-  toggleBtnActive: { backgroundColor: '#8B1A1A', borderColor: '#C9A84C' },
-  toggleText: { color: '#7a4030', fontWeight: '600', fontSize: 14 },
-  toggleTextActive: { color: '#C9A84C' },
+  toggleBtn: { flex: 1, paddingVertical: 8, borderRadius: 10, alignItems: 'center' },
+  toggleBtnActive: { backgroundColor: '#e94560' },
+  toggleText: { color: '#888', fontWeight: '600', fontSize: 14 },
+  toggleTextActive: { color: '#fff' },
   platformScroll: { height: 88, marginBottom: 8 },
   platformScrollContent: { paddingHorizontal: 16, gap: 10, alignItems: 'center' },
   platformAllBtn: {
@@ -491,35 +495,35 @@ const styles = StyleSheet.create({
     height: 60,
     borderRadius: 20,
     borderWidth: 2,
-    borderColor: 'rgba(201, 168, 76, 0.3)',
-    backgroundColor: '#8B2A2A',
+    borderColor: '#0f3460',
+    backgroundColor: '#16213e',
     justifyContent: 'center',
     alignItems: 'center',
   },
-  platformAllText: { color: '#8a6a30', fontSize: 22, fontWeight: '700' },
-  platformAllTextActive: { color: '#C9A84C' },
+  platformAllText: { color: '#888', fontSize: 22, fontWeight: '700' },
+  platformAllTextActive: { color: '#e94560' },
   platformIconBtn: {
     width: 60,
     height: 60,
     borderRadius: 20,
     borderWidth: 2,
-    borderColor: 'rgba(201, 168, 76, 0.3)',
+    borderColor: 'transparent',
     overflow: 'hidden',
   },
-  platformIconBtnActive: { borderColor: '#C9A84C' },
+  platformIconBtnActive: { borderColor: '#e94560' },
   platformIconImg: { width: '100%', height: '100%' },
   platformFallbackView: {
     width: '100%',
     height: '100%',
-    backgroundColor: '#8B2A2A',
+    backgroundColor: '#16213e',
     justifyContent: 'center',
     alignItems: 'center',
     padding: 4,
   },
-  platformFallbackText: { color: '#8a6a30', fontSize: 14, fontWeight: '600', textAlign: 'center' },
-  platformSearchNotice: { color: '#5a2a2a', fontSize: 11, paddingHorizontal: 16, marginBottom: 6, fontStyle: 'italic' },
+  platformFallbackText: { color: '#aaa', fontSize: 14, fontWeight: '600', textAlign: 'center' },
+  platformSearchNotice: { color: '#555', fontSize: 11, paddingHorizontal: 16, marginBottom: 6, fontStyle: 'italic' },
   sectionLabel: {
-    color: '#C9A84C',
+    color: '#aaa',
     fontSize: 11,
     fontWeight: '600',
     textTransform: 'uppercase',
@@ -533,62 +537,72 @@ const styles = StyleSheet.create({
   genreChip: {
     paddingHorizontal: 14,
     paddingVertical: 6,
-    backgroundColor: '#8B2A2A',
+    backgroundColor: '#16213e',
     borderRadius: 20,
     borderWidth: 1,
-    borderColor: '#C9A84C',
+    borderColor: '#0f3460',
   },
-  genreChipActive: { backgroundColor: '#8B1A1A', borderColor: '#C9A84C' },
-  genreChipText: { color: '#C9A84C', fontSize: 13, fontWeight: '500' },
-  genreChipTextActive: { color: '#C9A84C' },
+  genreChipActive: { backgroundColor: '#e94560', borderColor: '#e94560' },
+  genreChipText: { color: '#888', fontSize: 13, fontWeight: '500' },
+  genreChipTextActive: { color: '#fff' },
   list: { paddingHorizontal: 16, paddingBottom: 32 },
+  card: {
+    backgroundColor: '#16213e',
+    borderRadius: 16,
+    marginBottom: 12,
+    overflow: 'hidden',
+    borderWidth: 1,
+    borderColor: '#0f3460',
+    flexDirection: 'row',
+    minHeight: 155,
+  },
   poster: { width: 100, alignSelf: 'stretch' },
-  posterFallback: { backgroundColor: '#5a1a1a', justifyContent: 'center', alignItems: 'center' },
-  posterFallbackText: { color: '#8a6a30', fontSize: 13 },
+  posterFallback: { backgroundColor: '#0f3460', justifyContent: 'center', alignItems: 'center' },
+  posterFallbackText: { color: '#888', fontSize: 13 },
   cardBody: { flex: 1, padding: 12, justifyContent: 'space-between' },
   cardTitleRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 4 },
-  cardTitle: { color: '#C9A84C', fontSize: 15, fontWeight: 'bold', flex: 1, marginRight: 6 },
-  cardYear: { color: '#8a6a30', fontSize: 13, marginTop: 2 },
+  cardTitle: { color: '#fff', fontSize: 15, fontWeight: 'bold', flex: 1, marginRight: 6 },
+  cardYear: { color: '#888', fontSize: 13, marginTop: 2 },
   badgeRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 4, marginBottom: 6 },
-  typeBadge: { backgroundColor: '#5a2a2a', borderRadius: 6, paddingHorizontal: 8, paddingVertical: 3 },
+  typeBadge: { backgroundColor: '#0f3460', borderRadius: 6, paddingHorizontal: 8, paddingVertical: 3 },
   typeBadgeText: { fontSize: 12 },
-  genreBadge: { backgroundColor: '#8B2A2A', borderWidth: 1, borderColor: '#C9A84C', borderRadius: 6, paddingHorizontal: 8, paddingVertical: 3 },
-  genreBadgeText: { color: '#ddc9a8', fontSize: 12 },
-  overview: { color: '#ddc9a8', fontSize: 13, lineHeight: 18, marginBottom: 8 },
+  genreBadge: { backgroundColor: '#1a1a2e', borderWidth: 1, borderColor: '#0f3460', borderRadius: 6, paddingHorizontal: 8, paddingVertical: 3 },
+  genreBadgeText: { color: '#ccc', fontSize: 12 },
+  overview: { color: '#999', fontSize: 13, lineHeight: 18, marginBottom: 8 },
   cardActions: { flexDirection: 'row', gap: 10 },
   passBtn: {
     flex: 1, borderRadius: 10, paddingVertical: 10, alignItems: 'center',
-    backgroundColor: '#1a0505', borderWidth: 1, borderColor: '#5a2a2a',
+    backgroundColor: '#1a1a2e', borderWidth: 1, borderColor: '#333',
   },
-  passBtnText: { color: '#8a6a30', fontWeight: '600' },
+  passBtnText: { color: '#aaa', fontWeight: '600' },
   likeBtn: {
     flex: 1, borderRadius: 10, paddingVertical: 10, alignItems: 'center',
-    backgroundColor: '#8B1A1A', borderWidth: 1, borderColor: '#C9A84C',
+    backgroundColor: '#e94560',
   },
-  likeBtnText: { color: '#C9A84C', fontWeight: 'bold' },
+  likeBtnText: { color: '#fff', fontWeight: 'bold' },
   centered: { flex: 1, justifyContent: 'center', alignItems: 'center', paddingTop: 60 },
-  emptyText: { color: '#8a6a30', fontSize: 16 },
-  exhaustedText: { color: '#5a2a2a', textAlign: 'center', paddingVertical: 16, fontSize: 14 },
+  emptyText: { color: '#888', fontSize: 16 },
+  exhaustedText: { color: '#555', textAlign: 'center', paddingVertical: 16, fontSize: 14 },
   contextPill: {
     flexDirection: 'row',
     alignItems: 'center',
     alignSelf: 'flex-start',
     marginHorizontal: 16,
     marginBottom: 8,
-    backgroundColor: '#8B2A2A',
+    backgroundColor: '#16213e',
     borderRadius: 20,
     paddingHorizontal: 14,
     paddingVertical: 7,
     borderWidth: 1,
-    borderColor: '#C9A84C',
+    borderColor: '#0f3460',
   },
-  contextPillLabel: { color: '#8a6a30', fontSize: 13 },
-  contextPillValue: { color: '#C9A84C', fontSize: 13, fontWeight: '600' },
+  contextPillLabel: { color: '#888', fontSize: 13 },
+  contextPillValue: { color: '#e94560', fontSize: 13, fontWeight: '600' },
   contextModalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'center', alignItems: 'center' },
-  contextModalBox: { backgroundColor: '#1a0505', borderRadius: 16, padding: 20, width: '80%', borderWidth: 1, borderColor: '#C9A84C' },
-  contextModalTitle: { color: '#8a6a30', fontSize: 13, fontWeight: '600', textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 12 },
+  contextModalBox: { backgroundColor: '#16213e', borderRadius: 16, padding: 20, width: '80%', borderWidth: 1, borderColor: '#0f3460' },
+  contextModalTitle: { color: '#888', fontSize: 13, fontWeight: '600', textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 12 },
   contextOption: { paddingVertical: 13, paddingHorizontal: 12, borderRadius: 10, marginBottom: 6 },
-  contextOptionActive: { backgroundColor: '#8B1A1A' },
-  contextOptionText: { color: '#ddc9a8', fontSize: 16 },
-  contextOptionTextActive: { color: '#C9A84C', fontWeight: 'bold' },
+  contextOptionActive: { backgroundColor: '#e94560' },
+  contextOptionText: { color: '#ccc', fontSize: 16 },
+  contextOptionTextActive: { color: '#fff', fontWeight: 'bold' },
 });

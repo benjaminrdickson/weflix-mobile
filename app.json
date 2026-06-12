@@ -16,7 +16,7 @@
     "android": {
       "package": "com.weflix.app",
       "adaptiveIcon": {
-        "backgroundColor": "#1a0505"
+        "backgroundColor": "#1a1a2e"
       },
       "permissions": [
         "android.permission.RECORD_AUDIO"
@@ -34,7 +34,7 @@
       [
         "expo-notifications",
         {
-          "color": "#C9A84C"
+          "color": "#e94560"
         }
       ]
     ],

@@ -7,7 +7,6 @@ import {
 import * as Localization from 'expo-localization';
 import { openTrailer } from '../components/TrailerModal';
 import DetailModal from '../components/DetailModal';
-import TicketCard from '../components/TicketCard';
 import { edgeFn } from '../lib/edgeFunctions';
 
 const TMDB_IMAGE_BASE = 'https://image.tmdb.org/t/p/w342';
@@ -21,12 +20,12 @@ function MemberAvatar({ user, size = 44 }) {
       {user.image_url && !imgError ? (
         <Image
           source={{ uri: user.image_url, cache: 'reload' }}
-          style={{ width: size, height: size, borderRadius: r, borderWidth: 1, borderColor: '#C9A84C' }}
+          style={{ width: size, height: size, borderRadius: r, borderWidth: 1, borderColor: '#e94560' }}
           onError={() => setImgError(true)}
         />
       ) : (
-        <View style={{ width: size, height: size, borderRadius: r, backgroundColor: '#5a2a2a', justifyContent: 'center', alignItems: 'center', borderWidth: 1, borderColor: '#C9A84C' }}>
-          <Text style={{ color: '#ddc9a8', fontSize: size * 0.38, fontWeight: 'bold' }}>
+        <View style={{ width: size, height: size, borderRadius: r, backgroundColor: '#0f3460', justifyContent: 'center', alignItems: 'center', borderWidth: 1, borderColor: '#e94560' }}>
+          <Text style={{ color: '#fff', fontSize: size * 0.38, fontWeight: 'bold' }}>
             {user.name?.[0]?.toUpperCase() || '?'}
           </Text>
         </View>
@@ -41,47 +40,45 @@ function WatchlistCard({ item, onRemove, onPress }) {
   const hasProviders = item.watch_providers?.flatrate?.length || item.watch_providers?.rent?.length || item.watch_providers?.buy?.length;
 
   return (
-    <TouchableOpacity activeOpacity={0.95} onPress={onPress}>
-      <TicketCard posterWidth={80} style={{ marginBottom: 12 }}>
-        <View style={styles.watchCardTop}>
-          {item.poster_path ? (
-            <Image source={{ uri: `${TMDB_IMAGE_BASE}${item.poster_path}` }} style={styles.watchPoster} />
-          ) : (
-            <View style={[styles.watchPoster, styles.posterFallback]} />
-          )}
-          <View style={styles.watchInfo}>
-            <View style={styles.typeBadge}>
-              <Text style={styles.typeBadgeText}>{item.content_type === 'tv' ? '📺 TV' : '🎬 Movie'}</Text>
-            </View>
-            <Text style={styles.watchTitle} numberOfLines={2}>{item.title}</Text>
-            <Text style={styles.watchYear}>{item.release_date?.slice(0, 4)}</Text>
-            <Text style={styles.watchOverview} numberOfLines={expanded ? undefined : 2}>{item.overview}</Text>
-            {item.overview?.length > 0 && (
-              <TouchableOpacity onPress={() => setExpanded(e => !e)}>
-                <Text style={styles.overviewToggle}>{expanded ? 'less' : 'more'}</Text>
-              </TouchableOpacity>
-            )}
-            <TouchableOpacity onPress={() => openTrailer(item.videos)}>
-              <Text style={styles.trailerLink}>▶ Trailer</Text>
-            </TouchableOpacity>
-          </View>
-        </View>
-        {hasProviders ? (
-          <View style={styles.providersRow}>
-            {(item.watch_providers?.flatrate || []).slice(0, 4).map(p => (
-              <View key={p.provider_id} style={styles.providerChip}>
-                {p.logo_path ? <Image source={{ uri: `${TMDB_LOGO_BASE}${p.logo_path}` }} style={styles.providerLogo} /> : null}
-                <Text style={styles.providerName} numberOfLines={1}>{p.provider_name}</Text>
-              </View>
-            ))}
-          </View>
+    <TouchableOpacity style={styles.watchCard} activeOpacity={0.95} onPress={onPress}>
+      <View style={styles.watchCardTop}>
+        {item.poster_path ? (
+          <Image source={{ uri: `${TMDB_IMAGE_BASE}${item.poster_path}` }} style={styles.watchPoster} />
         ) : (
-          <Text style={styles.noProviders}>Not available for streaming in your region</Text>
+          <View style={[styles.watchPoster, styles.posterFallback]} />
         )}
-        <TouchableOpacity style={styles.removeBtn} onPress={() => onRemove(item.watchlist_item_id)}>
-          <Text style={styles.removeBtnText}>Remove</Text>
-        </TouchableOpacity>
-      </TicketCard>
+        <View style={styles.watchInfo}>
+          <View style={styles.typeBadge}>
+            <Text style={styles.typeBadgeText}>{item.content_type === 'tv' ? '📺 TV' : '🎬 Movie'}</Text>
+          </View>
+          <Text style={styles.watchTitle} numberOfLines={2}>{item.title}</Text>
+          <Text style={styles.watchYear}>{item.release_date?.slice(0, 4)}</Text>
+          <Text style={styles.watchOverview} numberOfLines={expanded ? undefined : 2}>{item.overview}</Text>
+          {item.overview?.length > 0 && (
+            <TouchableOpacity onPress={() => setExpanded(e => !e)}>
+              <Text style={styles.overviewToggle}>{expanded ? 'less' : 'more'}</Text>
+            </TouchableOpacity>
+          )}
+          <TouchableOpacity onPress={() => openTrailer(item.videos)}>
+            <Text style={styles.trailerLink}>▶ Trailer</Text>
+          </TouchableOpacity>
+        </View>
+      </View>
+      {hasProviders ? (
+        <View style={styles.providersRow}>
+          {(item.watch_providers?.flatrate || []).slice(0, 4).map(p => (
+            <View key={p.provider_id} style={styles.providerChip}>
+              {p.logo_path ? <Image source={{ uri: `${TMDB_LOGO_BASE}${p.logo_path}` }} style={styles.providerLogo} /> : null}
+              <Text style={styles.providerName} numberOfLines={1}>{p.provider_name}</Text>
+            </View>
+          ))}
+        </View>
+      ) : (
+        <Text style={styles.noProviders}>Not available for streaming in your region</Text>
+      )}
+      <TouchableOpacity style={styles.removeBtn} onPress={() => onRemove(item.watchlist_item_id)}>
+        <Text style={styles.removeBtnText}>Remove</Text>
+      </TouchableOpacity>
     </TouchableOpacity>
   );
 }
@@ -259,7 +256,7 @@ export default function GroupDetailScreen({ route, navigation }) {
   if (loading || !group) {
     return (
       <View style={styles.centered}>
-        <ActivityIndicator size="large" color="#C9A84C" />
+        <ActivityIndicator size="large" color="#e94560" />
       </View>
     );
   }
@@ -321,14 +318,14 @@ export default function GroupDetailScreen({ route, navigation }) {
         </View>
       )}
 
-      {/* Creator: transfer ownership button */}
+      {/* Creator: transfer ownership button (only when other members exist and no pending invite) */}
       {group.is_creator && !group.pending_ownership_invite && group.members.length > 1 && (
         <TouchableOpacity style={styles.transferBtn} onPress={() => setTransferPickerVisible(true)}>
           <Text style={styles.transferBtnText}>Transfer Ownership</Text>
         </TouchableOpacity>
       )}
 
-      {/* Watchlist */}
+      {/* Watchlist — primary content */}
       <View style={styles.section}>
         <View style={styles.watchlistHeader}>
           <Text style={styles.sectionTitle}>Watchlist</Text>
@@ -367,7 +364,7 @@ export default function GroupDetailScreen({ route, navigation }) {
         })()}
       </View>
 
-      {/* Leave group */}
+      {/* Leave group (non-creator members only) */}
       {!group.is_creator && (
         <TouchableOpacity style={styles.leaveBtn} onPress={handleLeaveGroup}>
           <Text style={styles.leaveBtnText}>Leave Group</Text>
@@ -387,14 +384,14 @@ export default function GroupDetailScreen({ route, navigation }) {
               autoCapitalize="words"
               returnKeyType="done"
               onSubmitEditing={handleRename}
-              placeholderTextColor="#8a6a30"
+              placeholderTextColor="#888"
             />
             <View style={styles.modalActions}>
               <TouchableOpacity style={[styles.modalBtn, styles.modalCancelBtn]} onPress={() => setRenameVisible(false)}>
                 <Text style={styles.modalCancelText}>Cancel</Text>
               </TouchableOpacity>
               <TouchableOpacity style={[styles.modalBtn, styles.modalConfirmBtn]} onPress={handleRename} disabled={renaming}>
-                {renaming ? <ActivityIndicator color="#C9A84C" size="small" /> : <Text style={styles.modalConfirmText}>Save</Text>}
+                {renaming ? <ActivityIndicator color="#fff" size="small" /> : <Text style={styles.modalConfirmText}>Save</Text>}
               </TouchableOpacity>
             </View>
           </View>
@@ -422,7 +419,7 @@ export default function GroupDetailScreen({ route, navigation }) {
                     disabled={transferring === m.id}
                   >
                     {transferring === m.id
-                      ? <ActivityIndicator color="#C9A84C" size="small" />
+                      ? <ActivityIndicator color="#fff" size="small" />
                       : <Text style={styles.modalConfirmText}>Select</Text>}
                   </TouchableOpacity>
                 </View>
@@ -451,7 +448,7 @@ export default function GroupDetailScreen({ route, navigation }) {
           <View style={[styles.modalBox, { maxHeight: '70%' }]}>
             <Text style={styles.modalTitle}>Invite a Friend</Text>
             {loadingFriends ? (
-              <ActivityIndicator color="#C9A84C" style={{ marginVertical: 24 }} />
+              <ActivityIndicator color="#e94560" style={{ marginVertical: 24 }} />
             ) : friends.length === 0 ? (
               <View>
                 <Text style={styles.emptyText}>
@@ -480,7 +477,7 @@ export default function GroupDetailScreen({ route, navigation }) {
                       disabled={inviting === f.id}
                     >
                       {inviting === f.id
-                        ? <ActivityIndicator color="#C9A84C" size="small" />
+                        ? <ActivityIndicator color="#fff" size="small" />
                         : <Text style={styles.modalConfirmText}>Invite</Text>}
                     </TouchableOpacity>
                   </View>
@@ -498,76 +495,77 @@ export default function GroupDetailScreen({ route, navigation }) {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#1a0505' },
+  container: { flex: 1, backgroundColor: '#1a1a2e' },
   content: { paddingBottom: 40 },
-  centered: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#1a0505' },
-  editLink: { color: '#C9A84C', fontSize: 14, fontWeight: '600' },
+  centered: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#1a1a2e' },
+  editLink: { color: '#e94560', fontSize: 14, fontWeight: '600' },
   memberBar: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16, paddingVertical: 12, gap: 12 },
   membersRow: { gap: 8, flexDirection: 'row', alignItems: 'center' },
   memberAvatarWrap: { marginRight: 4 },
-  memberName: { color: '#8a6a30', fontSize: 11, marginTop: 4, textAlign: 'center', maxWidth: 52 },
-  inviteBtn: { borderWidth: 1, borderColor: '#C9A84C', borderRadius: 10, paddingHorizontal: 12, paddingVertical: 8 },
-  inviteBtnText: { color: '#C9A84C', fontWeight: '600', fontSize: 13 },
-  approvalSection: { backgroundColor: '#8B2A2A', borderRadius: 16, marginHorizontal: 16, marginBottom: 12, padding: 16, borderWidth: 1, borderColor: '#C9A84C' },
-  approvalTitle: { color: '#C9A84C', fontSize: 14, fontWeight: 'bold', marginBottom: 10 },
-  sentPill: { marginHorizontal: 16, marginBottom: 12, backgroundColor: '#5a2a2a', borderRadius: 10, paddingHorizontal: 14, paddingVertical: 8 },
-  sentPillText: { color: '#8a6a30', fontSize: 13 },
-  section: { backgroundColor: '#8B2A2A', borderRadius: 16, marginHorizontal: 16, marginBottom: 16, padding: 16, borderWidth: 1, borderColor: '#C9A84C' },
+  memberName: { color: '#888', fontSize: 11, marginTop: 4, textAlign: 'center', maxWidth: 52 },
+  inviteBtn: { borderWidth: 1, borderColor: '#e94560', borderRadius: 10, paddingHorizontal: 12, paddingVertical: 8 },
+  inviteBtnText: { color: '#e94560', fontWeight: '600', fontSize: 13 },
+  approvalSection: { backgroundColor: '#16213e', borderRadius: 16, marginHorizontal: 16, marginBottom: 12, padding: 16, borderWidth: 1, borderColor: '#e94560' },
+  approvalTitle: { color: '#e94560', fontSize: 14, fontWeight: 'bold', marginBottom: 10 },
+  sentPill: { marginHorizontal: 16, marginBottom: 12, backgroundColor: '#0f3460', borderRadius: 10, paddingHorizontal: 14, paddingVertical: 8 },
+  sentPillText: { color: '#888', fontSize: 13 },
+  section: { backgroundColor: '#16213e', borderRadius: 16, marginHorizontal: 16, marginBottom: 16, padding: 16, borderWidth: 1, borderColor: '#0f3460' },
   watchlistHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 },
-  sectionTitle: { color: '#C9A84C', fontSize: 17, fontWeight: 'bold' },
-  toggle: { flexDirection: 'row', backgroundColor: '#1a0505', borderRadius: 12, padding: 4, marginBottom: 16 },
-  toggleBtn: { flex: 1, paddingVertical: 9, borderRadius: 10, alignItems: 'center', borderWidth: 1, borderColor: '#4a1a1a' },
-  toggleBtnActive: { backgroundColor: '#8B1A1A', borderColor: '#C9A84C' },
-  toggleText: { color: '#7a4030', fontWeight: '600', fontSize: 14 },
-  toggleTextActive: { color: '#C9A84C' },
-  invitationRow: { paddingVertical: 10, borderBottomWidth: 1, borderBottomColor: '#4a1a1a' },
-  inviteeName: { color: '#ddc9a8', fontSize: 15, marginBottom: 8 },
-  inviteeUsername: { color: '#8a6a30', fontSize: 13 },
+  sectionTitle: { color: '#fff', fontSize: 17, fontWeight: 'bold' },
+  toggle: { flexDirection: 'row', backgroundColor: '#0f3460', borderRadius: 12, padding: 4, marginBottom: 16 },
+  toggleBtn: { flex: 1, paddingVertical: 9, borderRadius: 10, alignItems: 'center' },
+  toggleBtnActive: { backgroundColor: '#e94560' },
+  toggleText: { color: '#888', fontWeight: '600', fontSize: 14 },
+  toggleTextActive: { color: '#fff' },
+  invitationRow: { paddingVertical: 10, borderBottomWidth: 1, borderBottomColor: '#0f3460' },
+  inviteeName: { color: '#fff', fontSize: 15, marginBottom: 8 },
+  inviteeUsername: { color: '#888', fontSize: 13 },
   inviteActions: { flexDirection: 'row', gap: 10 },
   approveBtn: { flex: 1, backgroundColor: '#2ecc71', borderRadius: 8, padding: 10, alignItems: 'center' },
   approveBtnText: { color: '#fff', fontWeight: 'bold' },
-  rejectBtn: { flex: 1, backgroundColor: '#5a2a2a', borderRadius: 8, padding: 10, alignItems: 'center' },
-  rejectBtnText: { color: '#8a6a30', fontWeight: '600' },
-  leaveBtn: { marginTop: 8, marginBottom: 32, marginHorizontal: 16, borderRadius: 12, padding: 15, alignItems: 'center', borderWidth: 1, borderColor: '#C9A84C' },
-  leaveBtnText: { color: '#C9A84C', fontWeight: '600', fontSize: 15 },
-  transferBtn: { marginHorizontal: 16, marginBottom: 12, borderRadius: 12, padding: 13, alignItems: 'center', borderWidth: 1, borderColor: '#8a6a30' },
-  transferBtnText: { color: '#8a6a30', fontWeight: '600', fontSize: 14 },
-  ownershipInvitePill: { marginHorizontal: 16, marginBottom: 12, backgroundColor: '#5a2a2a', borderRadius: 10, paddingHorizontal: 14, paddingVertical: 10, gap: 6 },
-  ownershipInviteText: { color: '#8a6a30', fontSize: 13 },
-  cancelInviteLink: { color: '#C9A84C', fontSize: 13, fontWeight: '600' },
-  transferPickerSubtitle: { color: '#8a6a30', fontSize: 13, marginBottom: 12 },
-  emptyText: { color: '#8a6a30', fontSize: 14, textAlign: 'center', paddingVertical: 8 },
+  rejectBtn: { flex: 1, backgroundColor: '#0f3460', borderRadius: 8, padding: 10, alignItems: 'center' },
+  rejectBtnText: { color: '#aaa', fontWeight: '600' },
+  leaveBtn: { marginTop: 8, marginBottom: 32, marginHorizontal: 16, borderRadius: 12, padding: 15, alignItems: 'center', borderWidth: 1, borderColor: '#e94560' },
+  leaveBtnText: { color: '#e94560', fontWeight: '600', fontSize: 15 },
+  transferBtn: { marginHorizontal: 16, marginBottom: 12, borderRadius: 12, padding: 13, alignItems: 'center', borderWidth: 1, borderColor: '#888' },
+  transferBtnText: { color: '#888', fontWeight: '600', fontSize: 14 },
+  ownershipInvitePill: { marginHorizontal: 16, marginBottom: 12, backgroundColor: '#0f3460', borderRadius: 10, paddingHorizontal: 14, paddingVertical: 10, gap: 6 },
+  ownershipInviteText: { color: '#aaa', fontSize: 13 },
+  cancelInviteLink: { color: '#e94560', fontSize: 13, fontWeight: '600' },
+  transferPickerSubtitle: { color: '#888', fontSize: 13, marginBottom: 12 },
+  emptyText: { color: '#888', fontSize: 14, textAlign: 'center', paddingVertical: 8 },
+  watchCard: { backgroundColor: '#1a1a2e', borderRadius: 12, marginBottom: 12, borderWidth: 1, borderColor: '#0f3460', overflow: 'hidden' },
   watchCardTop: { flexDirection: 'row', padding: 10, gap: 10 },
   watchPoster: { width: 80, height: 115, borderRadius: 8 },
-  posterFallback: { backgroundColor: '#5a1a1a' },
+  posterFallback: { backgroundColor: '#0f3460' },
   watchInfo: { flex: 1 },
-  typeBadge: { backgroundColor: '#5a2a2a', borderRadius: 6, paddingHorizontal: 8, paddingVertical: 3, alignSelf: 'flex-start', marginBottom: 6 },
-  typeBadgeText: { color: '#8a6a30', fontSize: 11 },
-  watchTitle: { color: '#C9A84C', fontSize: 15, fontWeight: 'bold', marginBottom: 3 },
-  watchYear: { color: '#8a6a30', fontSize: 12, marginBottom: 4 },
-  watchOverview: { color: '#ddc9a8', fontSize: 12, lineHeight: 17, marginBottom: 2 },
-  overviewToggle: { color: '#C9A84C', fontSize: 11, fontWeight: '600', marginBottom: 4 },
-  trailerLink: { color: '#C9A84C', fontSize: 13, fontWeight: '600' },
+  typeBadge: { backgroundColor: '#0f3460', borderRadius: 6, paddingHorizontal: 8, paddingVertical: 3, alignSelf: 'flex-start', marginBottom: 6 },
+  typeBadgeText: { color: '#aaa', fontSize: 11 },
+  watchTitle: { color: '#fff', fontSize: 15, fontWeight: 'bold', marginBottom: 3 },
+  watchYear: { color: '#888', fontSize: 12, marginBottom: 4 },
+  watchOverview: { color: '#999', fontSize: 12, lineHeight: 17, marginBottom: 2 },
+  overviewToggle: { color: '#e94560', fontSize: 11, fontWeight: '600', marginBottom: 4 },
+  trailerLink: { color: '#e94560', fontSize: 13, fontWeight: '600' },
   providersRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 6, paddingHorizontal: 10, paddingBottom: 8 },
-  providerChip: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#5a2a2a', borderRadius: 6, padding: 4, gap: 4 },
+  providerChip: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#0f3460', borderRadius: 6, padding: 4, gap: 4 },
   providerLogo: { width: 18, height: 18, borderRadius: 3 },
-  providerName: { color: '#ddc9a8', fontSize: 11, maxWidth: 80 },
-  noProviders: { color: '#5a2a2a', fontSize: 12, fontStyle: 'italic', paddingHorizontal: 10, paddingBottom: 8 },
-  removeBtn: { borderTopWidth: 1, borderTopColor: '#4a1a1a', padding: 10, alignItems: 'center' },
-  removeBtnText: { color: '#C9A84C', fontSize: 13, fontWeight: '600' },
+  providerName: { color: '#ccc', fontSize: 11, maxWidth: 80 },
+  noProviders: { color: '#555', fontSize: 12, fontStyle: 'italic', paddingHorizontal: 10, paddingBottom: 8 },
+  removeBtn: { borderTopWidth: 1, borderTopColor: '#0f3460', padding: 10, alignItems: 'center' },
+  removeBtnText: { color: '#e94560', fontSize: 13, fontWeight: '600' },
   modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.6)', justifyContent: 'center', alignItems: 'center' },
-  modalBox: { backgroundColor: '#1a0505', borderRadius: 16, padding: 24, width: '85%', borderWidth: 1, borderColor: '#C9A84C' },
-  modalTitle: { color: '#C9A84C', fontSize: 18, fontWeight: 'bold', marginBottom: 16 },
-  modalInput: { backgroundColor: '#5a2a2a', color: '#ddc9a8', borderRadius: 10, padding: 12, fontSize: 15, marginBottom: 16, borderWidth: 1, borderColor: '#C9A84C' },
+  modalBox: { backgroundColor: '#16213e', borderRadius: 16, padding: 24, width: '85%', borderWidth: 1, borderColor: '#0f3460' },
+  modalTitle: { color: '#fff', fontSize: 18, fontWeight: 'bold', marginBottom: 16 },
+  modalInput: { backgroundColor: '#0f3460', color: '#fff', borderRadius: 10, padding: 12, fontSize: 15, marginBottom: 16 },
   modalActions: { flexDirection: 'row', gap: 12 },
   modalBtn: { flex: 1, borderRadius: 10, padding: 13, alignItems: 'center' },
-  modalCancelBtn: { backgroundColor: '#5a2a2a' },
-  modalCancelText: { color: '#8a6a30', fontWeight: '600' },
-  modalConfirmBtn: { backgroundColor: '#8B1A1A', borderWidth: 1, borderColor: '#C9A84C' },
-  modalConfirmText: { color: '#C9A84C', fontWeight: 'bold' },
-  friendRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingVertical: 10, borderBottomWidth: 1, borderBottomColor: '#4a1a1a' },
-  friendName: { color: '#ddc9a8', fontSize: 15, fontWeight: '600' },
-  friendUsername: { color: '#8a6a30', fontSize: 13 },
-  goToProfileBtn: { marginTop: 16, backgroundColor: '#8B1A1A', borderRadius: 10, padding: 12, alignItems: 'center', borderWidth: 1, borderColor: '#C9A84C' },
-  goToProfileBtnText: { color: '#C9A84C', fontWeight: 'bold', fontSize: 14 },
+  modalCancelBtn: { backgroundColor: '#0f3460' },
+  modalCancelText: { color: '#aaa', fontWeight: '600' },
+  modalConfirmBtn: { backgroundColor: '#e94560' },
+  modalConfirmText: { color: '#fff', fontWeight: 'bold' },
+  friendRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingVertical: 10, borderBottomWidth: 1, borderBottomColor: '#0f3460' },
+  friendName: { color: '#fff', fontSize: 15, fontWeight: '600' },
+  friendUsername: { color: '#888', fontSize: 13 },
+  goToProfileBtn: { marginTop: 16, backgroundColor: '#e94560', borderRadius: 10, padding: 12, alignItems: 'center' },
+  goToProfileBtnText: { color: '#fff', fontWeight: 'bold', fontSize: 14 },
 });

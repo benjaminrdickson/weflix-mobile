@@ -75,7 +75,7 @@ export default function GroupsScreen({ navigation }) {
 
       {loading ? (
         <View style={styles.centered}>
-          <ActivityIndicator size="large" color="#C9A84C" />
+          <ActivityIndicator size="large" color="#e94560" />
         </View>
       ) : (
         <FlatList
@@ -98,7 +98,7 @@ export default function GroupsScreen({ navigation }) {
             <TextInput
               style={styles.modalInput}
               placeholder="Group name"
-              placeholderTextColor="#8a6a30"
+              placeholderTextColor="#888"
               value={newGroupName}
               onChangeText={setNewGroupName}
               autoFocus
@@ -119,7 +119,7 @@ export default function GroupsScreen({ navigation }) {
                 disabled={creating}
               >
                 {creating
-                  ? <ActivityIndicator color="#C9A84C" size="small" />
+                  ? <ActivityIndicator color="#fff" size="small" />
                   : <Text style={styles.modalConfirmText}>Create</Text>}
               </TouchableOpacity>
             </View>
@@ -131,7 +131,7 @@ export default function GroupsScreen({ navigation }) {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#1a0505' },
+  container: { flex: 1, backgroundColor: '#1a1a2e' },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -140,34 +140,34 @@ const styles = StyleSheet.create({
     marginBottom: 16,
     paddingHorizontal: 16,
   },
-  screenTitle: { color: '#C9A84C', fontSize: 28, fontWeight: 'bold' },
-  createBtn: { backgroundColor: '#8B1A1A', borderRadius: 10, paddingHorizontal: 14, paddingVertical: 8, borderWidth: 1, borderColor: '#C9A84C' },
-  createBtnText: { color: '#C9A84C', fontWeight: 'bold', fontSize: 15 },
+  screenTitle: { color: '#fff', fontSize: 28, fontWeight: 'bold' },
+  createBtn: { backgroundColor: '#e94560', borderRadius: 10, paddingHorizontal: 14, paddingVertical: 8 },
+  createBtnText: { color: '#fff', fontWeight: 'bold', fontSize: 15 },
   centered: { flex: 1, justifyContent: 'center', alignItems: 'center', paddingTop: 60 },
-  emptyText: { color: '#8a6a30', fontSize: 15, textAlign: 'center', paddingHorizontal: 32 },
+  emptyText: { color: '#888', fontSize: 15, textAlign: 'center', paddingHorizontal: 32 },
   list: { paddingHorizontal: 16, paddingBottom: 32 },
   groupCard: {
-    backgroundColor: '#8B2A2A',
+    backgroundColor: '#16213e',
     borderRadius: 14,
     padding: 16,
     marginBottom: 12,
     borderWidth: 1,
-    borderColor: '#C9A84C',
+    borderColor: '#0f3460',
     flexDirection: 'row',
     alignItems: 'center',
   },
   groupCardLeft: { flex: 1 },
-  groupName: { color: '#ddc9a8', fontSize: 17, fontWeight: '600', marginBottom: 4 },
-  groupMeta: { color: '#8a6a30', fontSize: 13 },
-  chevron: { color: '#5a2a2a', fontSize: 22, marginLeft: 8 },
+  groupName: { color: '#fff', fontSize: 17, fontWeight: '600', marginBottom: 4 },
+  groupMeta: { color: '#888', fontSize: 13 },
+  chevron: { color: '#555', fontSize: 22, marginLeft: 8 },
   modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.6)', justifyContent: 'center', alignItems: 'center' },
-  modalBox: { backgroundColor: '#1a0505', borderRadius: 16, padding: 24, width: '82%', borderWidth: 1, borderColor: '#C9A84C' },
-  modalTitle: { color: '#C9A84C', fontSize: 18, fontWeight: 'bold', marginBottom: 16 },
-  modalInput: { backgroundColor: '#5a2a2a', color: '#ddc9a8', borderRadius: 10, padding: 12, fontSize: 15, marginBottom: 16, borderWidth: 1, borderColor: '#C9A84C' },
+  modalBox: { backgroundColor: '#16213e', borderRadius: 16, padding: 24, width: '82%', borderWidth: 1, borderColor: '#0f3460' },
+  modalTitle: { color: '#fff', fontSize: 18, fontWeight: 'bold', marginBottom: 16 },
+  modalInput: { backgroundColor: '#0f3460', color: '#fff', borderRadius: 10, padding: 12, fontSize: 15, marginBottom: 16 },
   modalActions: { flexDirection: 'row', gap: 12 },
   modalBtn: { flex: 1, borderRadius: 10, padding: 13, alignItems: 'center' },
-  modalCancelBtn: { backgroundColor: '#5a2a2a' },
-  modalCancelText: { color: '#8a6a30', fontWeight: '600' },
-  modalConfirmBtn: { backgroundColor: '#8B1A1A', borderWidth: 1, borderColor: '#C9A84C' },
-  modalConfirmText: { color: '#C9A84C', fontWeight: 'bold' },
+  modalCancelBtn: { backgroundColor: '#0f3460' },
+  modalCancelText: { color: '#aaa', fontWeight: '600' },
+  modalConfirmBtn: { backgroundColor: '#e94560' },
+  modalConfirmText: { color: '#fff', fontWeight: 'bold' },
 });

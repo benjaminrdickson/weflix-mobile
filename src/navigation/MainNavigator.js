@@ -26,9 +26,9 @@ export default function MainNavigator() {
     <Tab.Navigator
       screenOptions={{
         headerShown: false,
-        tabBarStyle: { backgroundColor: '#1a0505', borderTopColor: '#4a1a1a' },
-        tabBarActiveTintColor: '#C9A84C',
-        tabBarInactiveTintColor: '#5a2a2a',
+        tabBarStyle: { backgroundColor: '#16213e', borderTopColor: '#0f3460' },
+        tabBarActiveTintColor: '#e94560',
+        tabBarInactiveTintColor: '#888',
       }}
     >
       <Tab.Screen

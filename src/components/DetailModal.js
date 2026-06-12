@@ -49,7 +49,7 @@ export default function DetailModal({ item, genreMap, onLike, onPass, onClose, m
     try {
       await WebBrowser.openBrowserAsync(`https://www.youtube.com/watch?v=${trailerKey}`, {
         presentationStyle: WebBrowser.WebBrowserPresentationStyle.FORM_SHEET,
-        toolbarColor: '#1a0505',
+        toolbarColor: '#1a1a2e',
       });
     } finally {
       setTrailerLoading(false);
@@ -139,7 +139,7 @@ export default function DetailModal({ item, genreMap, onLike, onPass, onClose, m
               </View>
 
               {loading ? (
-                <ActivityIndicator color="#C9A84C" style={{ marginVertical: 24 }} />
+                <ActivityIndicator color="#e94560" style={{ marginVertical: 24 }} />
               ) : (
                 <>
                   <Text style={styles.overview}>{detail?.overview || item?.overview || 'No description available.'}</Text>
@@ -150,7 +150,7 @@ export default function DetailModal({ item, genreMap, onLike, onPass, onClose, m
                     disabled={!trailerKey || trailerLoading}
                   >
                     {trailerLoading
-                      ? <ActivityIndicator color="#C9A84C" size="small" />
+                      ? <ActivityIndicator color="#e94560" size="small" />
                       : <Text style={[styles.trailerText, !trailerKey && styles.trailerTextDisabled]}>
                           {trailerKey ? '▶  Watch Trailer' : 'No Trailer Available'}
                         </Text>
@@ -177,10 +177,10 @@ export default function DetailModal({ item, genreMap, onLike, onPass, onClose, m
             {mode === 'browse' ? (
               <>
                 <TouchableOpacity style={[styles.actionBtn, styles.passBtn]} onPress={handlePass} disabled={acting}>
-                  {acting ? <ActivityIndicator color="#8a6a30" /> : <Text style={styles.passBtnText}>✕  Pass</Text>}
+                  {acting ? <ActivityIndicator color="#aaa" /> : <Text style={styles.passBtnText}>✕  Pass</Text>}
                 </TouchableOpacity>
                 <TouchableOpacity style={[styles.actionBtn, styles.likeBtn]} onPress={handleLike} disabled={acting}>
-                  {acting ? <ActivityIndicator color="#C9A84C" /> : <Text style={styles.likeBtnText}>❤  Like</Text>}
+                  {acting ? <ActivityIndicator color="#fff" /> : <Text style={styles.likeBtnText}>❤  Like</Text>}
                 </TouchableOpacity>
               </>
             ) : (
@@ -189,7 +189,7 @@ export default function DetailModal({ item, genreMap, onLike, onPass, onClose, m
                   <Text style={styles.upvoteBtnText}>▲  Upvote</Text>
                 </TouchableOpacity>
                 <TouchableOpacity style={[styles.actionBtn, styles.removeBtn]} onPress={handleRemove} disabled={acting}>
-                  {acting ? <ActivityIndicator color="#C9A84C" /> : <Text style={styles.removeBtnText}>✕  Remove</Text>}
+                  {acting ? <ActivityIndicator color="#fff" /> : <Text style={styles.removeBtnText}>✕  Remove</Text>}
                 </TouchableOpacity>
               </>
             )}
@@ -226,7 +226,7 @@ const styles = StyleSheet.create({
     justifyContent: 'flex-end',
   },
   sheet: {
-    backgroundColor: '#1a0505',
+    backgroundColor: '#1a1a2e',
     borderTopLeftRadius: 20,
     borderTopRightRadius: 20,
     maxHeight: '92%',
@@ -243,54 +243,54 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
   },
-  closeBtnText: { color: '#C9A84C', fontSize: 16, fontWeight: 'bold' },
+  closeBtnText: { color: '#fff', fontSize: 16, fontWeight: 'bold' },
   poster: { width: '100%', height: 300, borderTopLeftRadius: 20, borderTopRightRadius: 20 },
-  posterFallback: { backgroundColor: '#5a1a1a', justifyContent: 'center', alignItems: 'center' },
-  posterFallbackText: { color: '#8a6a30', fontSize: 18 },
+  posterFallback: { backgroundColor: '#16213e', justifyContent: 'center', alignItems: 'center' },
+  posterFallbackText: { color: '#888', fontSize: 18 },
   body: { padding: 20 },
   titleRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 10 },
-  title: { color: '#C9A84C', fontSize: 22, fontWeight: 'bold', flex: 1, marginRight: 8 },
-  year: { color: '#8a6a30', fontSize: 16, marginTop: 4 },
+  title: { color: '#fff', fontSize: 22, fontWeight: 'bold', flex: 1, marginRight: 8 },
+  year: { color: '#888', fontSize: 16, marginTop: 4 },
   badgeRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginBottom: 16 },
-  typeBadge: { backgroundColor: '#5a2a2a', borderRadius: 6, paddingHorizontal: 8, paddingVertical: 3 },
-  typeBadgeText: { color: '#8a6a30', fontSize: 12 },
-  genreBadge: { backgroundColor: '#8B2A2A', borderWidth: 1, borderColor: '#C9A84C', borderRadius: 6, paddingHorizontal: 8, paddingVertical: 3 },
-  genreBadgeText: { color: '#ddc9a8', fontSize: 12 },
-  overview: { color: '#ddc9a8', fontSize: 15, lineHeight: 23, marginBottom: 20 },
+  typeBadge: { backgroundColor: '#0f3460', borderRadius: 6, paddingHorizontal: 8, paddingVertical: 3 },
+  typeBadgeText: { color: '#aaa', fontSize: 12 },
+  genreBadge: { backgroundColor: '#16213e', borderWidth: 1, borderColor: '#0f3460', borderRadius: 6, paddingHorizontal: 8, paddingVertical: 3 },
+  genreBadgeText: { color: '#ccc', fontSize: 12 },
+  overview: { color: '#ccc', fontSize: 15, lineHeight: 23, marginBottom: 20 },
   trailerBtn: {
     borderWidth: 1,
-    borderColor: '#C9A84C',
+    borderColor: '#e94560',
     borderRadius: 10,
     paddingVertical: 12,
     alignItems: 'center',
     marginBottom: 20,
   },
-  trailerBtnDisabled: { borderColor: '#4a1a1a' },
-  trailerText: { color: '#C9A84C', fontWeight: '600', fontSize: 15 },
-  trailerTextDisabled: { color: '#5a2a2a' },
+  trailerBtnDisabled: { borderColor: '#444' },
+  trailerText: { color: '#e94560', fontWeight: '600', fontSize: 15 },
+  trailerTextDisabled: { color: '#555' },
   providersSection: { marginBottom: 8 },
   providerRow: { marginBottom: 12 },
-  providerLabel: { color: '#8a6a30', fontSize: 12, fontWeight: '600', marginBottom: 6 },
+  providerLabel: { color: '#888', fontSize: 12, fontWeight: '600', marginBottom: 6 },
   providerChips: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
-  providerChip: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#8B2A2A', borderWidth: 1, borderColor: '#C9A84C', borderRadius: 8, paddingHorizontal: 8, paddingVertical: 5, gap: 6 },
+  providerChip: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#16213e', borderWidth: 1, borderColor: '#0f3460', borderRadius: 8, paddingHorizontal: 8, paddingVertical: 5, gap: 6 },
   providerLogo: { width: 22, height: 22, borderRadius: 4 },
-  providerName: { color: '#ddc9a8', fontSize: 12, maxWidth: 90 },
-  noProviders: { color: '#5a2a2a', fontSize: 13, fontStyle: 'italic' },
+  providerName: { color: '#ccc', fontSize: 12, maxWidth: 90 },
+  noProviders: { color: '#555', fontSize: 13, fontStyle: 'italic' },
   actions: {
     flexDirection: 'row',
     gap: 12,
     padding: 16,
     paddingBottom: 32,
     borderTopWidth: 1,
-    borderTopColor: '#4a1a1a',
+    borderTopColor: '#0f3460',
   },
   actionBtn: { flex: 1, borderRadius: 12, paddingVertical: 14, alignItems: 'center' },
-  passBtn: { backgroundColor: '#1a0505', borderWidth: 1, borderColor: '#5a2a2a' },
-  passBtnText: { color: '#8a6a30', fontWeight: '600', fontSize: 16 },
-  likeBtn: { backgroundColor: '#8B1A1A', borderWidth: 1, borderColor: '#C9A84C' },
-  likeBtnText: { color: '#C9A84C', fontWeight: 'bold', fontSize: 16 },
-  removeBtn: { backgroundColor: '#8B1A1A', borderWidth: 1, borderColor: '#C9A84C' },
-  removeBtnText: { color: '#C9A84C', fontWeight: 'bold', fontSize: 16 },
-  upvoteBtn: { backgroundColor: '#1a0505', borderWidth: 1, borderColor: '#4a1a1a', opacity: 0.5 },
-  upvoteBtnText: { color: '#8a6a30', fontWeight: '600', fontSize: 16 },
+  passBtn: { backgroundColor: '#16213e', borderWidth: 1, borderColor: '#333' },
+  passBtnText: { color: '#aaa', fontWeight: '600', fontSize: 16 },
+  likeBtn: { backgroundColor: '#e94560' },
+  likeBtnText: { color: '#fff', fontWeight: 'bold', fontSize: 16 },
+  removeBtn: { backgroundColor: '#e94560' },
+  removeBtnText: { color: '#fff', fontWeight: 'bold', fontSize: 16 },
+  upvoteBtn: { backgroundColor: '#16213e', borderWidth: 1, borderColor: '#333', opacity: 0.5 },
+  upvoteBtnText: { color: '#888', fontWeight: '600', fontSize: 16 },
 });

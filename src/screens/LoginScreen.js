@@ -69,7 +69,7 @@ export default function LoginScreen({ navigation }) {
       <TextInput
         style={styles.input}
         placeholder="Email"
-        placeholderTextColor="#8a6a30"
+        placeholderTextColor="#888"
         value={email}
         onChangeText={setEmail}
         keyboardType="email-address"
@@ -78,14 +78,14 @@ export default function LoginScreen({ navigation }) {
       <TextInput
         style={styles.input}
         placeholder="Password"
-        placeholderTextColor="#8a6a30"
+        placeholderTextColor="#888"
         value={password}
         onChangeText={setPassword}
         secureTextEntry
       />
 
       {loading ? (
-        <ActivityIndicator size="large" color="#C9A84C" style={{ marginTop: 16 }} />
+        <ActivityIndicator size="large" color="#e94560" style={{ marginTop: 16 }} />
       ) : (
         <TouchableOpacity style={styles.button} onPress={handleLogin}>
           <Text style={styles.buttonText}>Log In</Text>
@@ -113,7 +113,7 @@ export default function LoginScreen({ navigation }) {
             <TextInput
               style={styles.input}
               placeholder="Email"
-              placeholderTextColor="#8a6a30"
+              placeholderTextColor="#888"
               value={resetEmail}
               onChangeText={setResetEmail}
               keyboardType="email-address"
@@ -133,7 +133,7 @@ export default function LoginScreen({ navigation }) {
                 disabled={resetLoading}
               >
                 {resetLoading
-                  ? <ActivityIndicator color="#C9A84C" size="small" />
+                  ? <ActivityIndicator color="#fff" size="small" />
                   : <Text style={styles.modalConfirmText}>Send</Text>}
               </TouchableOpacity>
             </View>
@@ -147,55 +147,53 @@ export default function LoginScreen({ navigation }) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#1a0505',
+    backgroundColor: '#1a1a2e',
     justifyContent: 'center',
     paddingHorizontal: 32,
   },
   logo: {
     fontSize: 48,
     fontWeight: 'bold',
-    color: '#C9A84C',
+    color: '#e94560',
     textAlign: 'center',
     marginBottom: 8,
   },
   tagline: {
-    color: '#8a6a30',
+    color: '#888',
     textAlign: 'center',
     marginBottom: 40,
     fontSize: 16,
   },
   input: {
-    backgroundColor: '#8B2A2A',
-    color: '#ddc9a8',
+    backgroundColor: '#16213e',
+    color: '#fff',
     borderRadius: 10,
     padding: 16,
     marginBottom: 16,
     fontSize: 16,
     borderWidth: 1,
-    borderColor: '#C9A84C',
+    borderColor: '#0f3460',
   },
   button: {
-    backgroundColor: '#8B1A1A',
+    backgroundColor: '#e94560',
     borderRadius: 10,
     padding: 16,
     alignItems: 'center',
     marginTop: 8,
     marginBottom: 24,
-    borderWidth: 1,
-    borderColor: '#C9A84C',
   },
   buttonText: {
-    color: '#C9A84C',
+    color: '#fff',
     fontSize: 18,
     fontWeight: 'bold',
   },
   forgotLink: {
-    color: '#8a6a30',
+    color: '#888',
     textAlign: 'center',
     fontSize: 14,
   },
   link: {
-    color: '#C9A84C',
+    color: '#e94560',
     textAlign: 'center',
     fontSize: 15,
   },
@@ -206,19 +204,19 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   modalBox: {
-    backgroundColor: '#1a0505',
+    backgroundColor: '#16213e',
     borderRadius: 16,
     padding: 24,
     width: '88%',
     borderWidth: 1,
-    borderColor: '#C9A84C',
+    borderColor: '#0f3460',
   },
-  modalTitle: { color: '#C9A84C', fontSize: 18, fontWeight: 'bold', marginBottom: 8 },
-  modalBody: { color: '#8a6a30', fontSize: 14, lineHeight: 20, marginBottom: 16 },
+  modalTitle: { color: '#fff', fontSize: 18, fontWeight: 'bold', marginBottom: 8 },
+  modalBody: { color: '#888', fontSize: 14, lineHeight: 20, marginBottom: 16 },
   modalActions: { flexDirection: 'row', gap: 12, marginTop: 4 },
   modalBtn: { flex: 1, borderRadius: 10, padding: 13, alignItems: 'center' },
-  modalCancelBtn: { backgroundColor: '#5a2a2a' },
-  modalCancelText: { color: '#8a6a30', fontWeight: '600' },
-  modalConfirmBtn: { backgroundColor: '#8B1A1A', borderWidth: 1, borderColor: '#C9A84C' },
-  modalConfirmText: { color: '#C9A84C', fontWeight: 'bold' },
+  modalCancelBtn: { backgroundColor: '#0f3460' },
+  modalCancelText: { color: '#aaa', fontWeight: '600' },
+  modalConfirmBtn: { backgroundColor: '#e94560' },
+  modalConfirmText: { color: '#fff', fontWeight: 'bold' },
 });

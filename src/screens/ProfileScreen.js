@@ -311,7 +311,7 @@ export default function ProfileScreen() {
   if (!user) {
     return (
       <View style={styles.centered}>
-        <ActivityIndicator size="large" color="#C9A84C" />
+        <ActivityIndicator size="large" color="#e94560" />
       </View>
     );
   }
@@ -341,7 +341,7 @@ export default function ProfileScreen() {
           )}
           <View style={styles.changePhotoOverlay}>
             {uploadingPhoto
-              ? <ActivityIndicator size="small" color="#C9A84C" />
+              ? <ActivityIndicator size="small" color="#fff" />
               : <Text style={styles.changePhotoText}>📷</Text>}
           </View>
         </TouchableOpacity>
@@ -363,7 +363,7 @@ export default function ProfileScreen() {
                 onChangeText={set(field)}
                 keyboardType={keyboardType}
                 autoCapitalize={autoCapitalize || 'words'}
-                placeholderTextColor="#8a6a30"
+                placeholderTextColor="#888"
               />
             </View>
           ))}
@@ -372,7 +372,7 @@ export default function ProfileScreen() {
               <Text style={styles.cancelBtnText}>Cancel</Text>
             </TouchableOpacity>
             <TouchableOpacity style={[styles.btn, styles.saveBtn]} onPress={handleSave} disabled={saving}>
-              {saving ? <ActivityIndicator color="#C9A84C" /> : <Text style={styles.saveBtnText}>Save</Text>}
+              {saving ? <ActivityIndicator color="#fff" /> : <Text style={styles.saveBtnText}>Save</Text>}
             </TouchableOpacity>
           </View>
         </View>
@@ -391,7 +391,7 @@ export default function ProfileScreen() {
       <View style={styles.section}>
         <Text style={styles.sectionTitle}>Partner</Text>
 
-        {relationshipLoading && <ActivityIndicator color="#C9A84C" style={{ marginVertical: 16 }} />}
+        {relationshipLoading && <ActivityIndicator color="#e94560" style={{ marginVertical: 16 }} />}
 
         {!rel && !relationshipLoading && (
           <>
@@ -400,13 +400,13 @@ export default function ProfileScreen() {
               <TextInput
                 style={[styles.input, { flex: 1 }]}
                 placeholder="Search by username"
-                placeholderTextColor="#8a6a30"
+                placeholderTextColor="#888"
                 value={partnerQuery}
                 onChangeText={setPartnerQuery}
                 autoCapitalize="none"
               />
               <TouchableOpacity style={styles.searchBtn} onPress={handleSearch} disabled={searching}>
-                {searching ? <ActivityIndicator color="#C9A84C" size="small" /> : <Text style={styles.searchBtnText}>Find</Text>}
+                {searching ? <ActivityIndicator color="#fff" size="small" /> : <Text style={styles.searchBtnText}>Find</Text>}
               </TouchableOpacity>
             </View>
             {foundUser && (
@@ -452,20 +452,21 @@ export default function ProfileScreen() {
       <View style={styles.section}>
         <Text style={styles.sectionTitle}>Friends</Text>
 
-        {friendsLoading && <ActivityIndicator color="#C9A84C" style={{ marginVertical: 8 }} />}
+        {friendsLoading && <ActivityIndicator color="#e94560" style={{ marginVertical: 8 }} />}
 
+        {/* Friend search */}
         <View style={styles.searchRow}>
           <TextInput
             style={[styles.input, { flex: 1 }]}
             placeholder="Add friend by username"
-            placeholderTextColor="#8a6a30"
+            placeholderTextColor="#888"
             value={friendQuery}
             onChangeText={setFriendQuery}
             autoCapitalize="none"
           />
           <TouchableOpacity style={styles.searchBtn} onPress={handleFriendSearch} disabled={searchingFriend}>
             {searchingFriend
-              ? <ActivityIndicator color="#C9A84C" size="small" />
+              ? <ActivityIndicator color="#fff" size="small" />
               : <Text style={styles.searchBtnText}>Find</Text>}
           </TouchableOpacity>
         </View>
@@ -479,6 +480,7 @@ export default function ProfileScreen() {
           </View>
         )}
 
+        {/* Pending incoming requests */}
         {pendingRequests.length > 0 && (
           <>
             <Text style={styles.friendSubtitle}>Pending Requests</Text>
@@ -493,6 +495,7 @@ export default function ProfileScreen() {
           </>
         )}
 
+        {/* Friends list */}
         {friends.length > 0 && (
           <>
             <Text style={styles.friendSubtitle}>Friends</Text>
@@ -542,7 +545,7 @@ export default function ProfileScreen() {
               <Switch
                 value={!!notifPrefs[key]}
                 onValueChange={() => toggleNotifPref(key)}
-                trackColor={{ false: '#5a2a2a', true: '#C9A84C' }}
+                trackColor={{ false: '#0f3460', true: '#e94560' }}
                 thumbColor="#fff"
               />
             </View>
@@ -656,11 +659,11 @@ function FriendCard({ user, children }) {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#1a0505' },
-  centered: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#1a0505' },
+  container: { flex: 1, backgroundColor: '#1a1a2e' },
+  centered: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#1a1a2e' },
   content: { paddingBottom: 48 },
   screenTitle: {
-    color: '#C9A84C',
+    color: '#fff',
     fontSize: 28,
     fontWeight: 'bold',
     textAlign: 'center',
@@ -668,105 +671,105 @@ const styles = StyleSheet.create({
     marginBottom: 24,
   },
   avatarSection: { alignItems: 'center', marginBottom: 24 },
-  avatar: { width: 100, height: 100, borderRadius: 50, borderWidth: 3, borderColor: '#C9A84C' },
-  avatarFallback: { backgroundColor: '#5a2a2a', justifyContent: 'center', alignItems: 'center' },
-  avatarInitial: { color: '#ddc9a8', fontSize: 36, fontWeight: 'bold' },
+  avatar: { width: 100, height: 100, borderRadius: 50, borderWidth: 3, borderColor: '#e94560' },
+  avatarFallback: { backgroundColor: '#0f3460', justifyContent: 'center', alignItems: 'center' },
+  avatarInitial: { color: '#fff', fontSize: 36, fontWeight: 'bold' },
   changePhotoOverlay: {
     position: 'absolute',
     bottom: 0,
     right: 0,
-    backgroundColor: '#8B1A1A',
+    backgroundColor: '#e94560',
     width: 32,
     height: 32,
     borderRadius: 16,
     justifyContent: 'center',
     alignItems: 'center',
     borderWidth: 2,
-    borderColor: '#1a0505',
+    borderColor: '#1a1a2e',
   },
   changePhotoText: { fontSize: 14 },
   section: {
-    backgroundColor: '#8B2A2A',
+    backgroundColor: '#16213e',
     borderRadius: 16,
     marginHorizontal: 16,
     marginBottom: 20,
     padding: 16,
     borderWidth: 1,
-    borderColor: '#C9A84C',
+    borderColor: '#0f3460',
   },
-  sectionTitle: { color: '#C9A84C', fontSize: 18, fontWeight: 'bold', marginBottom: 12 },
-  infoRow: { flexDirection: 'row', justifyContent: 'space-between', paddingVertical: 10, borderBottomWidth: 1, borderBottomColor: '#4a1a1a' },
-  infoLabel: { color: '#8a6a30', fontSize: 15 },
-  infoValue: { color: '#ddc9a8', fontSize: 15, fontWeight: '500' },
+  sectionTitle: { color: '#fff', fontSize: 18, fontWeight: 'bold', marginBottom: 12 },
+  infoRow: { flexDirection: 'row', justifyContent: 'space-between', paddingVertical: 10, borderBottomWidth: 1, borderBottomColor: '#0f3460' },
+  infoLabel: { color: '#888', fontSize: 15 },
+  infoValue: { color: '#fff', fontSize: 15, fontWeight: '500' },
   editBtn: {
-    backgroundColor: '#5a2a2a',
+    backgroundColor: '#0f3460',
     borderRadius: 10,
     padding: 12,
     alignItems: 'center',
     marginTop: 16,
   },
-  editBtnText: { color: '#C9A84C', fontWeight: '600' },
+  editBtnText: { color: '#e94560', fontWeight: '600' },
   fieldGroup: { marginBottom: 12 },
-  fieldLabel: { color: '#8a6a30', fontSize: 13, marginBottom: 4 },
+  fieldLabel: { color: '#888', fontSize: 13, marginBottom: 4 },
   input: {
-    backgroundColor: '#5a2a2a',
-    color: '#ddc9a8',
+    backgroundColor: '#0f3460',
+    color: '#fff',
     borderRadius: 8,
     padding: 12,
     fontSize: 15,
     borderWidth: 1,
-    borderColor: '#C9A84C',
+    borderColor: '#1a1a2e',
   },
   row: { flexDirection: 'row', gap: 12, marginTop: 8 },
   btn: { flex: 1, borderRadius: 10, padding: 14, alignItems: 'center' },
-  saveBtn: { backgroundColor: '#8B1A1A', borderWidth: 1, borderColor: '#C9A84C' },
-  saveBtnText: { color: '#C9A84C', fontWeight: 'bold', fontSize: 16 },
-  cancelBtn: { backgroundColor: '#5a2a2a' },
-  cancelBtnText: { color: '#8a6a30', fontWeight: '600', fontSize: 16 },
+  saveBtn: { backgroundColor: '#e94560' },
+  saveBtnText: { color: '#fff', fontWeight: 'bold', fontSize: 16 },
+  cancelBtn: { backgroundColor: '#0f3460' },
+  cancelBtnText: { color: '#aaa', fontWeight: '600', fontSize: 16 },
   acceptBtn: { backgroundColor: '#2ecc71' },
-  noPartnerText: { color: '#8a6a30', marginBottom: 12 },
+  noPartnerText: { color: '#888', marginBottom: 12 },
   searchRow: { flexDirection: 'row', gap: 8, marginBottom: 12 },
-  searchBtn: { backgroundColor: '#8B1A1A', borderRadius: 8, padding: 12, justifyContent: 'center', borderWidth: 1, borderColor: '#C9A84C' },
-  searchBtnText: { color: '#C9A84C', fontWeight: 'bold' },
+  searchBtn: { backgroundColor: '#e94560', borderRadius: 8, padding: 12, justifyContent: 'center' },
+  searchBtnText: { color: '#fff', fontWeight: 'bold' },
   foundUser: {
-    backgroundColor: '#5a2a2a',
+    backgroundColor: '#0f3460',
     borderRadius: 10,
     padding: 12,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
   },
-  foundUserName: { color: '#ddc9a8', fontSize: 15 },
-  sendRequestBtn: { backgroundColor: '#8B1A1A', borderRadius: 8, paddingHorizontal: 12, paddingVertical: 8, borderWidth: 1, borderColor: '#C9A84C' },
-  sendRequestText: { color: '#C9A84C', fontWeight: 'bold' },
-  pendingText: { color: '#8a6a30', fontStyle: 'italic', textAlign: 'center', marginTop: 8 },
+  foundUserName: { color: '#fff', fontSize: 15 },
+  sendRequestBtn: { backgroundColor: '#e94560', borderRadius: 8, paddingHorizontal: 12, paddingVertical: 8 },
+  sendRequestText: { color: '#fff', fontWeight: 'bold' },
+  pendingText: { color: '#888', fontStyle: 'italic', textAlign: 'center', marginTop: 8 },
   partnerCard: { flexDirection: 'row', alignItems: 'center', gap: 12, marginBottom: 12 },
-  partnerAvatar: { width: 52, height: 52, borderRadius: 26, borderWidth: 2, borderColor: '#C9A84C' },
-  partnerName: { color: '#ddc9a8', fontSize: 16, fontWeight: 'bold' },
-  partnerUsername: { color: '#8a6a30', fontSize: 13 },
-  endBtn: { borderWidth: 1, borderColor: '#C9A84C', borderRadius: 10, padding: 12, alignItems: 'center', marginTop: 4 },
-  endBtnText: { color: '#C9A84C', fontWeight: '600' },
-  logoutBtn: { marginHorizontal: 16, marginBottom: 12, backgroundColor: '#1a0505', borderRadius: 12, padding: 16, alignItems: 'center', borderWidth: 1, borderColor: '#C9A84C' },
-  logoutText: { color: '#C9A84C', fontSize: 16, fontWeight: 'bold' },
-  deleteBtn: { marginHorizontal: 16, marginBottom: 32, borderRadius: 12, padding: 16, alignItems: 'center', borderWidth: 1, borderColor: '#5a2a2a' },
-  deleteText: { color: '#8a6a30', fontSize: 15, fontWeight: '600' },
-  pendingCard: { paddingVertical: 10, borderBottomWidth: 1, borderBottomColor: '#4a1a1a' },
+  partnerAvatar: { width: 52, height: 52, borderRadius: 26, borderWidth: 2, borderColor: '#e94560' },
+  partnerName: { color: '#fff', fontSize: 16, fontWeight: 'bold' },
+  partnerUsername: { color: '#888', fontSize: 13 },
+  endBtn: { borderWidth: 1, borderColor: '#e94560', borderRadius: 10, padding: 12, alignItems: 'center', marginTop: 4 },
+  endBtnText: { color: '#e94560', fontWeight: '600' },
+  logoutBtn: { marginHorizontal: 16, marginBottom: 12, backgroundColor: '#16213e', borderRadius: 12, padding: 16, alignItems: 'center', borderWidth: 1, borderColor: '#e94560' },
+  logoutText: { color: '#e94560', fontSize: 16, fontWeight: 'bold' },
+  deleteBtn: { marginHorizontal: 16, marginBottom: 32, borderRadius: 12, padding: 16, alignItems: 'center', borderWidth: 1, borderColor: '#555' },
+  deleteText: { color: '#888', fontSize: 15, fontWeight: '600' },
+  pendingCard: { paddingVertical: 10, borderBottomWidth: 1, borderBottomColor: '#0f3460' },
   pendingActions: { flexDirection: 'row', gap: 10, marginTop: 8 },
-  friendSubtitle: { color: '#8a6a30', fontSize: 13, fontWeight: '600', marginTop: 12, marginBottom: 6, textTransform: 'uppercase', letterSpacing: 0.5 },
-  friendCard: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingVertical: 8, borderBottomWidth: 1, borderBottomColor: '#4a1a1a' },
+  friendSubtitle: { color: '#888', fontSize: 13, fontWeight: '600', marginTop: 12, marginBottom: 6, textTransform: 'uppercase', letterSpacing: 0.5 },
+  friendCard: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingVertical: 8, borderBottomWidth: 1, borderBottomColor: '#0f3460' },
   friendCardLeft: { flexDirection: 'row', alignItems: 'center', gap: 10, flex: 1 },
-  friendAvatar: { width: 40, height: 40, borderRadius: 20, borderWidth: 1, borderColor: '#C9A84C' },
-  removeFriendBtn: { paddingHorizontal: 10, paddingVertical: 6, borderRadius: 8, borderWidth: 1, borderColor: '#5a2a2a' },
-  removeFriendText: { color: '#8a6a30', fontSize: 12 },
+  friendAvatar: { width: 40, height: 40, borderRadius: 20, borderWidth: 1, borderColor: '#e94560' },
+  removeFriendBtn: { paddingHorizontal: 10, paddingVertical: 6, borderRadius: 8, borderWidth: 1, borderColor: '#555' },
+  removeFriendText: { color: '#888', fontSize: 12 },
   notifBanner: {
-    marginHorizontal: 16, marginBottom: 16, backgroundColor: '#1a0505',
-    borderRadius: 12, padding: 14, borderWidth: 1, borderColor: '#C9A84C',
+    marginHorizontal: 16, marginBottom: 16, backgroundColor: '#16213e',
+    borderRadius: 12, padding: 14, borderWidth: 1, borderColor: '#e94560',
   },
-  notifBannerText: { color: '#ddc9a8', fontSize: 13, marginBottom: 4 },
-  notifBannerLink: { color: '#C9A84C', fontSize: 13, fontWeight: '600' },
+  notifBannerText: { color: '#ccc', fontSize: 13, marginBottom: 4 },
+  notifBannerLink: { color: '#e94560', fontSize: 13, fontWeight: '600' },
   prefRow: {
     flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
-    paddingVertical: 10, borderBottomWidth: 1, borderBottomColor: '#4a1a1a',
+    paddingVertical: 10, borderBottomWidth: 1, borderBottomColor: '#0f3460',
   },
-  prefLabel: { color: '#ddc9a8', fontSize: 15, flex: 1 },
+  prefLabel: { color: '#ccc', fontSize: 15, flex: 1 },
 });

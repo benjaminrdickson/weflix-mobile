@@ -12,7 +12,7 @@ export default function GroupsNavigator() {
       <Stack.Screen
         name="GroupDetail"
         component={GroupDetailScreen}
-        options={{ headerShown: true, title: '', headerBackTitle: 'Groups', headerStyle: { backgroundColor: '#1a0505' }, headerTintColor: '#C9A84C' }}
+        options={{ headerShown: true, title: '', headerBackTitle: 'Groups', headerStyle: { backgroundColor: '#16213e' }, headerTintColor: '#e94560' }}
       />
     </Stack.Navigator>
   );
