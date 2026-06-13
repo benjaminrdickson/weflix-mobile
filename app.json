@@ -6,6 +6,11 @@
     "orientation": "portrait",
     "userInterfaceStyle": "dark",
     "icon": "./assets/Weflix-icon.png",
+    "splash": {
+      "image": "./assets/Splash-screen.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#1a1f2e"
+    },
     "ios": {
       "supportsTablet": false,
       "bundleIdentifier": "com.weflix.app",
