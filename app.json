@@ -5,7 +5,7 @@
     "version": "1.0.0",
     "orientation": "portrait",
     "userInterfaceStyle": "dark",
-    "icon": "./assets/Weflix-icon.png",
+    "icon": "./assets/Weflix-icon-final.png",
     "splash": {
       "image": "./assets/Splash-screen.png",
       "resizeMode": "contain",
@@ -21,6 +21,7 @@
     "android": {
       "package": "com.weflix.app",
       "adaptiveIcon": {
+        "foregroundImage": "./assets/Weflix-icon-final.png",
         "backgroundColor": "#1a1a2e"
       },
       "permissions": [
