@@ -9,3 +9,6 @@ web-build/
 *.mobileprovision
 *.orig.*
 .env
+.DS_Store
+*.dump
+supabase/.temp/
