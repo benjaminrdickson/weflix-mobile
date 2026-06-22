@@ -39,9 +39,9 @@ export default function ProfileScreen() {
       const { data: { user: authUser } } = await supabase.auth.getUser();
       const username = authUser.user_metadata.username;
       const { data } = await edgeFn.get(`users/${username}`);
-      setUser(data);
+      setUser({ ...data, email: authUser.email });
       setAvatarError(false);
-      setForm({ name: data.name, username: data.username, email: data.email });
+      setForm({ name: data.name, username: data.username, email: authUser.email });
     } catch {
       Alert.alert('Error', 'Could not load profile');
     }
