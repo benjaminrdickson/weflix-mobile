@@ -10,6 +10,7 @@ import * as Notifications from 'expo-notifications';
 import { edgeFn } from '../lib/edgeFunctions';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../context/AuthContext';
+import { decode } from 'base64-arraybuffer';
 
 export default function ProfileScreen() {
   const { logout } = useAuth();
@@ -107,6 +108,7 @@ export default function ProfileScreen() {
         allowsEditing: true,
         aspect: [1, 1],
         quality: 0.7,
+        base64: true,
       });
       if (result.canceled) return;
 
@@ -119,12 +121,13 @@ export default function ProfileScreen() {
       const contentType = match ? `image/${ext}` : 'image/jpeg';
       const storagePath = `${authUser.id}/avatar.${ext}`;
 
-      const fileRes = await fetch(uri);
-      const blob = await fileRes.blob();
+      const base64 = result.assets[0].base64;
+      if (!base64) throw new Error('Could not read image data. Please try again.');
+      const bytes = new Uint8Array(decode(base64));
 
       const { error: uploadError } = await supabase.storage
         .from('avatars')
-        .upload(storagePath, blob, { upsert: true, contentType });
+        .upload(storagePath, bytes, { upsert: true, contentType });
 
       if (uploadError) throw uploadError;
 
