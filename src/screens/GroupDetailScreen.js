@@ -99,6 +99,8 @@ export default function GroupDetailScreen({ route, navigation }) {
   const [inviting, setInviting] = useState(null);
   const [transferPickerVisible, setTransferPickerVisible] = useState(false);
   const [transferring, setTransferring] = useState(null);
+  const [kickVisible, setKickVisible] = useState(false);
+  const [kicking, setKicking] = useState(null);
   const [selectedItem, setSelectedItem] = useState(null);
 
   const loadGroup = useCallback(async () => {
@@ -184,6 +186,33 @@ export default function GroupDetailScreen({ route, navigation }) {
               Alert.alert('Error', msg);
             } finally {
               setTransferring(null);
+            }
+          },
+        },
+      ]
+    );
+  };
+
+  const handleKickMember = (member) => {
+    Alert.alert(
+      'Remove Member',
+      `Remove ${member.name} from "${group.name}"?`,
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Remove',
+          style: 'destructive',
+          onPress: async () => {
+            setKicking(member.id);
+            try {
+              await edgeFn.delete(`groups/${groupId}/members/${member.id}`);
+              setKickVisible(false);
+              await loadGroup();
+            } catch (err) {
+              const msg = err.response?.data?.error || 'Could not remove member';
+              Alert.alert('Error', msg);
+            } finally {
+              setKicking(null);
             }
           },
         },
@@ -325,6 +354,13 @@ export default function GroupDetailScreen({ route, navigation }) {
         </TouchableOpacity>
       )}
 
+      {/* Creator: remove member button */}
+      {group.is_creator && group.members.length > 1 && (
+        <TouchableOpacity style={styles.transferBtn} onPress={() => setKickVisible(true)}>
+          <Text style={styles.transferBtnText}>Remove Member</Text>
+        </TouchableOpacity>
+      )}
+
       {/* Watchlist — primary content */}
       <View style={styles.section}>
         <View style={styles.watchlistHeader}>
@@ -394,6 +430,40 @@ export default function GroupDetailScreen({ route, navigation }) {
                 {renaming ? <ActivityIndicator color="#fff" size="small" /> : <Text style={styles.modalConfirmText}>Save</Text>}
               </TouchableOpacity>
             </View>
+          </View>
+        </TouchableOpacity>
+      </Modal>
+
+      {/* Remove member modal */}
+      <Modal visible={kickVisible} transparent animationType="fade">
+        <TouchableOpacity style={styles.modalOverlay} activeOpacity={1} onPress={() => setKickVisible(false)}>
+          <View style={[styles.modalBox, { maxHeight: '70%' }]}>
+            <Text style={styles.modalTitle}>Remove Member</Text>
+            <Text style={styles.transferPickerSubtitle}>Select a member to remove from the group.</Text>
+            <FlatList
+              data={group.members.filter(m => m.id !== group.creator_id)}
+              keyExtractor={m => String(m.id)}
+              renderItem={({ item: m }) => (
+                <View style={styles.friendRow}>
+                  <View>
+                    <Text style={styles.friendName}>{m.name}</Text>
+                    <Text style={styles.friendUsername}>@{m.username}</Text>
+                  </View>
+                  <TouchableOpacity
+                    style={[styles.modalBtn, styles.kickBtn, { flex: 0, paddingHorizontal: 16 }]}
+                    onPress={() => handleKickMember(m)}
+                    disabled={kicking === m.id}
+                  >
+                    {kicking === m.id
+                      ? <ActivityIndicator color="#fff" size="small" />
+                      : <Text style={styles.kickBtnText}>Remove</Text>}
+                  </TouchableOpacity>
+                </View>
+              )}
+            />
+            <TouchableOpacity style={[styles.modalBtn, styles.modalCancelBtn, { marginTop: 12 }]} onPress={() => setKickVisible(false)}>
+              <Text style={styles.modalCancelText}>Close</Text>
+            </TouchableOpacity>
           </View>
         </TouchableOpacity>
       </Modal>
@@ -533,6 +603,8 @@ const styles = StyleSheet.create({
   ownershipInviteText: { color: '#aaa', fontSize: 13 },
   cancelInviteLink: { color: '#e94560', fontSize: 13, fontWeight: '600' },
   transferPickerSubtitle: { color: '#888', fontSize: 13, marginBottom: 12 },
+  kickBtn: { backgroundColor: '#c0392b' },
+  kickBtnText: { color: '#fff', fontWeight: 'bold' },
   emptyText: { color: '#888', fontSize: 14, textAlign: 'center', paddingVertical: 8 },
   watchCard: { backgroundColor: '#1a1a2e', borderRadius: 12, marginBottom: 12, borderWidth: 1, borderColor: '#0f3460', overflow: 'hidden' },
   watchCardTop: { flexDirection: 'row', padding: 10, gap: 10 },
