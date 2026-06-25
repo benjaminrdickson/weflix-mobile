@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useRef } from 'react';
 import { useFocusEffect } from '@react-navigation/native';
 import {
   View, Text, TextInput, TouchableOpacity, Image, Switch,
@@ -27,9 +27,10 @@ export default function ProfileScreen() {
   const [friends, setFriends] = useState([]);
   const [pendingRequests, setPendingRequests] = useState([]);
   const [friendQuery, setFriendQuery] = useState('');
-  const [foundFriend, setFoundFriend] = useState(null);
-  const [searchingFriend, setSearchingFriend] = useState(false);
+  const [friendSearchResults, setFriendSearchResults] = useState([]);
+  const [friendSearchLoading, setFriendSearchLoading] = useState(false);
   const [friendsLoading, setFriendsLoading] = useState(false);
+  const friendSearchTimerRef = useRef(null);
   const [notifPrefs, setNotifPrefs] = useState(null);
   const [notifPermDenied, setNotifPermDenied] = useState(false);
 
@@ -187,28 +188,33 @@ export default function ProfileScreen() {
     }
   };
 
-  const handleFriendSearch = async () => {
-    if (!friendQuery.trim()) return;
-    setSearchingFriend(true);
-    setFoundFriend(null);
-    try {
-      const { data } = await edgeFn.get(`users/${friendQuery.trim()}`);
-      setFoundFriend(data);
-    } catch {
-      Alert.alert('Not found', 'No user found with that username');
-    } finally {
-      setSearchingFriend(false);
+  const handleFriendSearchChange = (text) => {
+    setFriendQuery(text);
+    if (friendSearchTimerRef.current) clearTimeout(friendSearchTimerRef.current);
+    if (text.trim().length < 2) {
+      setFriendSearchResults([]);
+      setFriendSearchLoading(false);
+      return;
     }
+    setFriendSearchLoading(true);
+    friendSearchTimerRef.current = setTimeout(async () => {
+      try {
+        const { data } = await edgeFn.get('users/search', { q: text.trim() });
+        setFriendSearchResults(data);
+      } catch {
+        setFriendSearchResults([]);
+      } finally {
+        setFriendSearchLoading(false);
+      }
+    }, 300);
   };
 
-  const sendFriendRequest = async () => {
-    if (!foundFriend) return;
+  const handleSendFriendRequest = async (user) => {
     setFriendsLoading(true);
     try {
-      await edgeFn.post('friendships', { username: foundFriend.username });
-      Alert.alert('Request sent!', `Friend request sent to ${foundFriend.username}`);
-      setFoundFriend(null);
+      await edgeFn.post('friendships', { username: user.username });
       setFriendQuery('');
+      setFriendSearchResults([]);
       await loadFriends();
     } catch (err) {
       const message = err.response?.data?.error || 'Could not send friend request';
@@ -457,30 +463,33 @@ export default function ProfileScreen() {
 
         {friendsLoading && <ActivityIndicator color="#e94560" style={{ marginVertical: 8 }} />}
 
-        {/* Friend search */}
-        <View style={styles.searchRow}>
+        {/* Friend search — debounced live search */}
+        <View style={styles.friendSearchWrapper}>
           <TextInput
-            style={[styles.input, { flex: 1 }]}
-            placeholder="Add friend by username"
+            style={styles.friendSearchInput}
+            placeholder="Search by username or name"
             placeholderTextColor="#888"
             value={friendQuery}
-            onChangeText={setFriendQuery}
+            onChangeText={handleFriendSearchChange}
             autoCapitalize="none"
+            autoCorrect={false}
           />
-          <TouchableOpacity style={styles.searchBtn} onPress={handleFriendSearch} disabled={searchingFriend}>
-            {searchingFriend
-              ? <ActivityIndicator color="#fff" size="small" />
-              : <Text style={styles.searchBtnText}>Find</Text>}
-          </TouchableOpacity>
+          {friendSearchLoading && (
+            <ActivityIndicator size="small" color="#e94560" style={styles.friendSearchSpinner} />
+          )}
         </View>
 
-        {foundFriend && (
-          <View style={styles.foundUser}>
-            <Text style={styles.foundUserName}>{foundFriend.name} (@{foundFriend.username})</Text>
-            <TouchableOpacity style={styles.sendRequestBtn} onPress={sendFriendRequest}>
-              <Text style={styles.sendRequestText}>Add</Text>
-            </TouchableOpacity>
-          </View>
+        {friendSearchResults.map((u) => (
+          <FriendSearchRow
+            key={u.id}
+            user={u}
+            onPress={handleSendFriendRequest}
+            disabled={friendsLoading}
+          />
+        ))}
+
+        {friendQuery.trim().length >= 2 && !friendSearchLoading && friendSearchResults.length === 0 && (
+          <Text style={styles.noResultsText}>No users found</Text>
         )}
 
         {/* Pending incoming requests */}
@@ -566,6 +575,37 @@ export default function ProfileScreen() {
         <Text style={styles.deleteText}>Delete Account</Text>
       </TouchableOpacity>
     </ScrollView>
+  );
+}
+
+function FriendSearchRow({ user, onPress, disabled }) {
+  const [imgError, setImgError] = React.useState(false);
+  return (
+    <TouchableOpacity
+      style={styles.friendSearchRow}
+      onPress={() => onPress(user)}
+      disabled={disabled}
+      activeOpacity={0.7}
+    >
+      {user.image_url && !imgError ? (
+        <Image
+          source={{ uri: user.image_url, cache: 'reload' }}
+          style={styles.friendSearchAvatar}
+          onError={() => setImgError(true)}
+        />
+      ) : (
+        <View style={[styles.friendSearchAvatar, styles.avatarFallback]}>
+          <Text style={[styles.avatarInitial, { fontSize: 16 }]}>
+            {(user.name || user.username)?.[0]?.toUpperCase() || '?'}
+          </Text>
+        </View>
+      )}
+      <View style={styles.friendSearchInfo}>
+        <Text style={styles.partnerName}>@{user.username}</Text>
+        {user.name ? <Text style={styles.partnerUsername}>{user.name}</Text> : null}
+      </View>
+      <Text style={styles.addLabel}>Add</Text>
+    </TouchableOpacity>
   );
 }
 
@@ -768,6 +808,30 @@ const styles = StyleSheet.create({
     marginHorizontal: 16, marginBottom: 16, backgroundColor: '#16213e',
     borderRadius: 12, padding: 14, borderWidth: 1, borderColor: '#e94560',
   },
+  friendSearchWrapper: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#0f3460',
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: '#1a1a2e',
+    paddingHorizontal: 12,
+    marginBottom: 8,
+  },
+  friendSearchInput: { flex: 1, color: '#fff', fontSize: 15, paddingVertical: 12 },
+  friendSearchSpinner: { marginLeft: 8 },
+  friendSearchRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 8,
+    borderBottomWidth: 1,
+    borderBottomColor: '#0f3460',
+    gap: 10,
+  },
+  friendSearchAvatar: { width: 40, height: 40, borderRadius: 20, borderWidth: 1, borderColor: '#e94560' },
+  friendSearchInfo: { flex: 1 },
+  addLabel: { color: '#e94560', fontSize: 14, fontWeight: '600' },
+  noResultsText: { color: '#555', fontSize: 13, textAlign: 'center', paddingVertical: 8 },
   notifBannerText: { color: '#ccc', fontSize: 13, marginBottom: 4 },
   notifBannerLink: { color: '#e94560', fontSize: 13, fontWeight: '600' },
   prefRow: {
