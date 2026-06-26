@@ -156,7 +156,10 @@ export default function BrowseScreen() {
         setItems(incoming);
         setPage(targetPage);
       } else {
-        setItems(prev => [...prev, ...incoming]);
+        setItems(prev => {
+          const seen = new Set(prev.map(i => `${i.content_type}-${i.id}`));
+          return [...prev, ...incoming.filter(i => !seen.has(`${i.content_type}-${i.id}`))];
+        });
       }
       if (incoming.length === 0) setExhausted(true);
       if (incoming.length > 0) AsyncStorage.setItem(`browse_last_page_${browseContext}`, String(targetPage));
