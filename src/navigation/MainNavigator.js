@@ -48,7 +48,7 @@ function TabIcon({ label, pulseKey }) {
   );
 }
 
-function NudgeBubble({ text, tabIndex }) {
+function NudgeBubble({ text, tabIndex, extraBottom = 0 }) {
   const insets    = useSafeAreaInsets();
   const tabWidth  = SCREEN_WIDTH / NUM_TABS;
   const centerX   = tabWidth * tabIndex + tabWidth / 2;
@@ -59,7 +59,7 @@ function NudgeBubble({ text, tabIndex }) {
   return (
     <View
       pointerEvents="none"
-      style={[styles.bubble, { bottom: TAB_HEIGHT + insets.bottom + 10, left }]}
+      style={[styles.bubble, { bottom: TAB_HEIGHT + insets.bottom + 10 + extraBottom, left }]}
     >
       <Text style={styles.bubbleText}>{text}</Text>
       <View style={[styles.bubbleArrow, { left: arrowLeft }]} />
@@ -119,7 +119,7 @@ export default function MainNavigator() {
         <NudgeBubble text={partnerNudge.bubbleText} tabIndex={PARTNER_IDX} />
       ) : null}
       {groupNudge.bubbleText ? (
-        <NudgeBubble text={groupNudge.bubbleText} tabIndex={GROUPS_IDX} />
+        <NudgeBubble text={groupNudge.bubbleText} tabIndex={GROUPS_IDX} extraBottom={24} />
       ) : null}
     </View>
   );
