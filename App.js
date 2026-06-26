@@ -5,6 +5,7 @@ import { NavigationContainer } from '@react-navigation/native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as Notifications from 'expo-notifications';
 import * as Device from 'expo-device';
+import { SafeAreaProvider } from 'react-native-safe-area-context';
 import AuthNavigator from './src/navigation/AuthNavigator';
 import MainNavigator from './src/navigation/MainNavigator';
 import { AuthContext } from './src/context/AuthContext';
@@ -130,6 +131,7 @@ function App() {
   }
 
   return (
+    <SafeAreaProvider>
     <AuthContext.Provider value={{ session, user: session?.user ?? null, logout }}>
       <NotificationProvider isAuthenticated={!!session}>
         <OnboardingProvider isAuthenticated={!!session}>
@@ -144,6 +146,7 @@ function App() {
         </OnboardingProvider>
       </NotificationProvider>
     </AuthContext.Provider>
+    </SafeAreaProvider>
   );
 }
 
