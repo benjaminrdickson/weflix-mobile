@@ -1,4 +1,4 @@
-import React, { useCallback, useState, useRef } from 'react';
+import React, { useCallback, useState, useRef, useEffect } from 'react';
 import { useFocusEffect } from '@react-navigation/native';
 import {
   View, Text, Image, TextInput, TouchableOpacity, FlatList,
