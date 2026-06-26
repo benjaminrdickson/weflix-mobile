@@ -6,6 +6,7 @@ import {
 } from 'react-native';
 import { openTrailer } from '../components/TrailerModal';
 import DetailModal from '../components/DetailModal';
+import { useOnboarding } from '../context/OnboardingContext';
 import * as Localization from 'expo-localization';
 import { edgeFn } from '../lib/edgeFunctions';
 import { supabase } from '../lib/supabase';
@@ -177,6 +178,8 @@ function FavoriteCard({ item, onRemove, onPress }) {
 const FILTERS = ['all', 'movie', 'tv'];
 
 export default function FavoritesScreen() {
+  const { killPartnerNudge } = useOnboarding();
+
   const [favorites, setFavorites] = useState([]);
   const [currentUser, setCurrentUser] = useState(null);
   const [relationship, setRelationship] = useState(null);
@@ -222,6 +225,10 @@ export default function FavoritesScreen() {
   const isRecipient = rel && !rel.is_sender;
   const isPending = rel && !rel.confirmed;
   const isActive = rel && rel.confirmed;
+
+  useEffect(() => {
+    if (isActive) killPartnerNudge();
+  }, [isActive, killPartnerNudge]);
 
   const handleSearchChange = (text) => {
     setSearchQuery(text);

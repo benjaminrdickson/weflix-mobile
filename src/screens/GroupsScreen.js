@@ -1,12 +1,15 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import { useFocusEffect } from '@react-navigation/native';
 import {
   View, Text, TouchableOpacity, FlatList,
   StyleSheet, ActivityIndicator, Alert, TextInput, Modal,
 } from 'react-native';
 import { edgeFn } from '../lib/edgeFunctions';
+import { useOnboarding } from '../context/OnboardingContext';
 
 export default function GroupsScreen({ navigation }) {
+  const { killGroupNudge } = useOnboarding();
+
   const [groups, setGroups] = useState([]);
   const [loading, setLoading] = useState(true);
   const [createVisible, setCreateVisible] = useState(false);
@@ -17,12 +20,13 @@ export default function GroupsScreen({ navigation }) {
     try {
       const { data } = await edgeFn.get('groups');
       setGroups(data);
+      if (data.length > 0) killGroupNudge();
     } catch {
       Alert.alert('Error', 'Could not load groups');
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [killGroupNudge]);
 
   useFocusEffect(
     useCallback(() => {

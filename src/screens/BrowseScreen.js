@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
-import { useFocusEffect } from '@react-navigation/native';
+import { useFocusEffect, useNavigation } from '@react-navigation/native';
 import {
   View, Text, Image, TextInput, TouchableOpacity,
   FlatList, StyleSheet, ActivityIndicator, Alert,
@@ -9,6 +9,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as Localization from 'expo-localization';
 import { edgeFn } from '../lib/edgeFunctions';
 import DetailModal from '../components/DetailModal';
+import { useOnboarding } from '../context/OnboardingContext';
 
 const TMDB_IMAGE_BASE = 'https://image.tmdb.org/t/p/w342';
 const TMDB_LOGO_BASE  = 'https://image.tmdb.org/t/p/original';
@@ -31,6 +32,29 @@ const PLATFORMS = [
 ];
 
 export default function BrowseScreen() {
+  const navigation = useNavigation();
+  const {
+    introSeen,
+    shouldShowPrompt,
+    markIntroSeen,
+    markPromptSeen,
+    markSkipper,
+    notifyCardAction,
+  } = useOnboarding();
+
+  // Local visibility state for the connect prompt overlay.
+  // Initialized false; flips to true once when shouldShowPrompt fires.
+  const [promptVisible, setPromptVisible] = useState(false);
+  const promptInitRef = useRef(false);
+
+  useEffect(() => {
+    if (shouldShowPrompt && !promptInitRef.current) {
+      promptInitRef.current = true;
+      setPromptVisible(true);
+      markPromptSeen(); // persist immediately so it never re-fires
+    }
+  }, [shouldShowPrompt, markPromptSeen]);
+
   const [contentType, setContentType] = useState('movie');
   const [genres, setGenres]           = useState([]);
   const [genreMap, setGenreMap]       = useState({});
@@ -161,6 +185,8 @@ export default function BrowseScreen() {
   };
 
   const handleLike = async (item) => {
+    const ctx = browseContext === 'partner' ? 'partner' : 'group';
+    notifyCardAction('like', ctx);
     try {
       if (browseContext === 'partner') {
         await edgeFn.post('likes', { api_movie_id: item.id, content_type: item.content_type });
@@ -174,6 +200,7 @@ export default function BrowseScreen() {
   };
 
   const handlePass = async (item) => {
+    notifyCardAction('pass', browseContext === 'partner' ? 'partner' : 'group');
     try {
       await edgeFn.post('passes', { api_movie_id: item.id, content_type: item.content_type });
     } catch {
@@ -417,6 +444,59 @@ export default function BrowseScreen() {
         onClose={() => setSelectedItem(null)}
       />
 
+      {/* Intro line — shown once before first swipe */}
+      {!introSeen && (
+        <View style={styles.introOverlay}>
+          <View style={styles.introBox}>
+            <Text style={styles.introText}>
+              A watchlist is created when your partner or friend likes the same movie or show as you.
+            </Text>
+            <TouchableOpacity style={styles.introBtn} onPress={markIntroSeen} activeOpacity={0.85}>
+              <Text style={styles.introBtnText}>Got it</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      )}
+
+      {/* Connect prompt — fires at 5 likes or 20 swipes, dismisses only on Skip */}
+      {promptVisible && (
+        <View style={styles.promptOverlay}>
+          <View style={styles.promptBox}>
+            <View style={styles.promptChip}>
+              <Text style={styles.promptChipText}>Start matching</Text>
+            </View>
+            <Text style={styles.promptTitle}>Who are you watching with?</Text>
+            <Text style={styles.promptSubtext}>
+              Your picks become matches the moment someone you invite likes them too.
+            </Text>
+            <View style={styles.promptCards}>
+              <TouchableOpacity
+                style={styles.promptCard}
+                activeOpacity={0.85}
+                onPress={() => navigation.navigate('Partner')}
+              >
+                <Text style={styles.promptCardTitle}>Invite your partner</Text>
+                <Text style={styles.promptCardSub}>Match one-on-one</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={styles.promptCard}
+                activeOpacity={0.85}
+                onPress={() => navigation.navigate('Groups')}
+              >
+                <Text style={styles.promptCardTitle}>Start a group</Text>
+                <Text style={styles.promptCardSub}>Match with friends</Text>
+              </TouchableOpacity>
+            </View>
+            <TouchableOpacity
+              style={styles.promptSkip}
+              onPress={() => { setPromptVisible(false); markSkipper(); }}
+            >
+              <Text style={styles.promptSkipText}>Skip for now</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      )}
+
       <Modal visible={contextPickerVisible} transparent animationType="fade">
         <TouchableOpacity style={styles.contextModalOverlay} activeOpacity={1} onPress={() => setContextPickerVisible(false)}>
           <View style={styles.contextModalBox}>
@@ -598,6 +678,91 @@ const styles = StyleSheet.create({
   },
   contextPillLabel: { color: '#888', fontSize: 13 },
   contextPillValue: { color: '#e94560', fontSize: 13, fontWeight: '600' },
+  // Intro overlay
+  introOverlay: {
+    position: 'absolute', top: 0, left: 0, right: 0, bottom: 0,
+    backgroundColor: 'rgba(15, 52, 96, 0.96)',
+    justifyContent: 'center', alignItems: 'center',
+    zIndex: 50,
+  },
+  introBox: {
+    backgroundColor: '#16213e',
+    borderRadius: 20,
+    marginHorizontal: 28,
+    padding: 28,
+    borderWidth: 1,
+    borderColor: '#0f3460',
+    alignItems: 'center',
+  },
+  introText: {
+    color: '#fff',
+    fontSize: 18,
+    lineHeight: 27,
+    textAlign: 'center',
+    marginBottom: 24,
+    fontWeight: '500',
+  },
+  introBtn: {
+    backgroundColor: '#e94560',
+    borderRadius: 12,
+    paddingVertical: 14,
+    paddingHorizontal: 36,
+  },
+  introBtnText: { color: '#fff', fontWeight: 'bold', fontSize: 16 },
+
+  // Connect prompt overlay
+  promptOverlay: {
+    position: 'absolute', top: 0, left: 0, right: 0, bottom: 0,
+    backgroundColor: 'rgba(10, 15, 30, 0.97)',
+    justifyContent: 'center', alignItems: 'center',
+    zIndex: 50,
+  },
+  promptBox: {
+    width: '88%',
+    backgroundColor: '#16213e',
+    borderRadius: 22,
+    padding: 24,
+    borderWidth: 1,
+    borderColor: '#0f3460',
+    alignItems: 'center',
+  },
+  promptChip: {
+    backgroundColor: '#0f3460',
+    borderRadius: 20,
+    paddingHorizontal: 18,
+    paddingVertical: 7,
+    marginBottom: 18,
+  },
+  promptChipText: { color: '#e94560', fontSize: 13, fontWeight: '700', letterSpacing: 0.5 },
+  promptTitle: {
+    color: '#fff',
+    fontSize: 22,
+    fontWeight: 'bold',
+    textAlign: 'center',
+    marginBottom: 10,
+  },
+  promptSubtext: {
+    color: '#aaa',
+    fontSize: 14,
+    lineHeight: 21,
+    textAlign: 'center',
+    marginBottom: 24,
+    paddingHorizontal: 4,
+  },
+  promptCards: { width: '100%', gap: 12, marginBottom: 24 },
+  promptCard: {
+    backgroundColor: '#0f3460',
+    borderRadius: 14,
+    padding: 18,
+    borderWidth: 1,
+    borderColor: '#1a4080',
+    alignItems: 'center',
+  },
+  promptCardTitle: { color: '#fff', fontSize: 17, fontWeight: 'bold', marginBottom: 4 },
+  promptCardSub:   { color: '#888', fontSize: 13 },
+  promptSkip:      { paddingVertical: 8, paddingHorizontal: 20 },
+  promptSkipText:  { color: '#555', fontSize: 14 },
+
   contextModalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'center', alignItems: 'center' },
   contextModalBox: { backgroundColor: '#16213e', borderRadius: 16, padding: 20, width: '80%', borderWidth: 1, borderColor: '#0f3460' },
   contextModalTitle: { color: '#888', fontSize: 13, fontWeight: '600', textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 12 },

@@ -9,6 +9,7 @@ import AuthNavigator from './src/navigation/AuthNavigator';
 import MainNavigator from './src/navigation/MainNavigator';
 import { AuthContext } from './src/context/AuthContext';
 import { NotificationProvider } from './src/context/NotificationContext';
+import { OnboardingProvider } from './src/context/OnboardingContext';
 import { supabase } from './src/lib/supabase';
 import { edgeFn } from './src/lib/edgeFunctions';
 
@@ -131,14 +132,16 @@ function App() {
   return (
     <AuthContext.Provider value={{ session, user: session?.user ?? null, logout }}>
       <NotificationProvider isAuthenticated={!!session}>
-        <NavigationContainer>
-          {session ? <MainNavigator /> : <AuthNavigator />}
-        </NavigationContainer>
-        <PermissionExplainerModal
-          visible={showPermissionModal}
-          onAllow={handleAllowNotifications}
-          onSkip={handleSkipNotifications}
-        />
+        <OnboardingProvider isAuthenticated={!!session}>
+          <NavigationContainer>
+            {session ? <MainNavigator /> : <AuthNavigator />}
+          </NavigationContainer>
+          <PermissionExplainerModal
+            visible={showPermissionModal}
+            onAllow={handleAllowNotifications}
+            onSkip={handleSkipNotifications}
+          />
+        </OnboardingProvider>
       </NotificationProvider>
     </AuthContext.Provider>
   );
